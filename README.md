@@ -20,6 +20,8 @@ npm run preview
 
 Le dossier `docs/` produit est un site statique. La configuration Vite utilise des chemins relatifs afin de fonctionner dans un sous-dossier GitHub Pages.
 
+La navigation utilise `HashRouter`. Les routes restent ainsi rechargeables sur GitHub Pages sans serveur ni règle de réécriture.
+
 ## Déploiement GitHub Pages
 
 Le workflow `.github/workflows/deploy-pages.yml` compile et publie automatiquement le projet lors d’un push sur `main`. Dans les réglages du dépôt GitHub, sélectionner **GitHub Actions** comme source de Pages.

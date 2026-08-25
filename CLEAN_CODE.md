@@ -169,8 +169,8 @@ Une modification est terminée lorsque :
 
 ## Priorités du futur refactoring
 
-1. Installer le routeur et remplacer le state `screen` de `App.tsx`.
-2. Découper les fonctionnalités dans leurs dossiers dédiés.
+1. Découper progressivement `AppRouter.tsx` par fonctionnalité.
+2. Déplacer les fonctionnalités dans leurs dossiers dédiés.
 3. Extraire la logique métier et les hooks de session.
 4. Nettoyer et découper la feuille de styles globale.
 5. Ajouter les tests sur la lecture, la progression et la persistance.

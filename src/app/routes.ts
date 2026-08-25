@@ -1,0 +1,39 @@
+export const ROUTE_PATTERNS = {
+  landing: "/",
+  profiles: "/espace",
+  profile: "/profil/:profileId",
+  settings: "/profil/:profileId/parametres",
+  reading: "/profil/:profileId/lecture",
+  writing: "/profil/:profileId/ecriture",
+  colors: "/profil/:profileId/maternelle/couleurs",
+  letterNames: "/profil/:profileId/maternelle/nom-des-lettres",
+  letterSounds: "/profil/:profileId/maternelle/son-des-lettres",
+  graphism: "/profil/:profileId/maternelle/graphisme",
+  punctualSetup: "/profil/:profileId/lecture/ponctuelle",
+  dailyOverview: "/profil/:profileId/lecture/quotidienne",
+  instruction: "/profil/:profileId/lecture/consigne",
+  session: "/profil/:profileId/lecture/session",
+  stepResult: "/profil/:profileId/lecture/resultat",
+  reward: "/profil/:profileId/lecture/recompense",
+} as const;
+
+const profileBase = (profileId: string) => `/profil/${encodeURIComponent(profileId)}`;
+
+export const routes = {
+  landing: ROUTE_PATTERNS.landing,
+  profiles: ROUTE_PATTERNS.profiles,
+  profile: (profileId: string) => profileBase(profileId),
+  settings: (profileId: string) => `${profileBase(profileId)}/parametres`,
+  reading: (profileId: string) => `${profileBase(profileId)}/lecture`,
+  writing: (profileId: string) => `${profileBase(profileId)}/ecriture`,
+  colors: (profileId: string) => `${profileBase(profileId)}/maternelle/couleurs`,
+  letterNames: (profileId: string) => `${profileBase(profileId)}/maternelle/nom-des-lettres`,
+  letterSounds: (profileId: string) => `${profileBase(profileId)}/maternelle/son-des-lettres`,
+  graphism: (profileId: string) => `${profileBase(profileId)}/maternelle/graphisme`,
+  punctualSetup: (profileId: string) => `${profileBase(profileId)}/lecture/ponctuelle`,
+  dailyOverview: (profileId: string) => `${profileBase(profileId)}/lecture/quotidienne`,
+  instruction: (profileId: string) => `${profileBase(profileId)}/lecture/consigne`,
+  session: (profileId: string) => `${profileBase(profileId)}/lecture/session`,
+  stepResult: (profileId: string) => `${profileBase(profileId)}/lecture/resultat`,
+  reward: (profileId: string) => `${profileBase(profileId)}/lecture/recompense`,
+} as const;
