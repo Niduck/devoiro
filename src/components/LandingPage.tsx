@@ -11,7 +11,7 @@ const FEATURES = [
   {
     image: activityReading,
     title: "Lire à voix haute",
-    text: "Un mot ou une phrase s’affiche, l’enfant le lit et le micro essaie de le reconnaître. S’il hésite, on peut activer les aides ou valider à sa place.",
+    text: "Un mot ou une phrase s’affiche, l’enfant le lit et le micro essaie de le reconnaître. S’il hésite ou si le micro ne reconnaît pas le mot, on peut activer les aides ou valider à sa place.",
   },
   {
     image: activityWriting,
@@ -30,7 +30,7 @@ const LEVELS = [
     level: "Maternelle",
     detail: "PS · MS · GS",
     title: "Découvrir avant de vraiment lire",
-    text: "Les couleurs dès la petite section, puis le nom des lettres, leur son, l’alphabet à repasser et des fiches de graphisme adaptées au niveau.",
+    text: "Les couleurs et les formes dès la petite section, puis les lettres au hasard ou en chanson, leur son, l’alphabet à repasser et des fiches de graphisme.",
   },
   {
     level: "CP",
@@ -57,10 +57,9 @@ export function LandingPage() {
 
     <section className="landing-hero">
       <div className="landing-copy">
-        <span className="landing-kicker">Un petit outil fait à la maison</span>
-        <h1>J’ai créé Devoiro pour accompagner les devoirs de mes enfants.</h1>
-        <p>Au départ, je voulais simplement les aider à lire plus facilement, sans ajouter une application compliquée de plus. Le projet a grandi avec eux : il propose maintenant de la lecture, de l’écriture et du graphisme, de la maternelle au CE1.</p>
-        <div className="landing-actions">
+        <span className="landing-kicker">Pensé pour les devoirs à la maison</span>
+        <h1>Un outil pour faire les devoirs ensemble.</h1>
+        <p>D’abord créé pour aider mes enfants à lire, Devoiro s’est ensuite ouvert à l’écriture et au graphisme. L’idée reste simple : proposer aux parents des outils concrets pour accompagner les apprentissages à la maison.</p>        <div className="landing-actions">
           <button className="primary-button" onClick={() => navigate(routes.profiles)}>Accéder à mon espace</button>
           <button className="landing-discover-button" onClick={() => document.getElementById("decouvrir")?.scrollIntoView()}>Voir ce qu’on peut faire</button>
         </div>

@@ -19,6 +19,22 @@ function distance(first: string, second: string) {
   return row[second.length];
 }
 
+const OPTIONAL_SPOKEN_WORDS = new Set(["un", "une", "le", "la", "les", "l", "de", "des", "du", "d", "au", "aux", "et", "en"]);
+const FLEXIBLE_ENDINGS = new Set(["e", "s", "x", "t", "d"]);
+
+function wordMatches(expected: string, heard: string) {
+  if (expected === heard) return true;
+
+  // La reconnaissance vocale écrit souvent une forme voisine qui se prononce
+  // pareil : « vol » pour « vole », « un » pour « une » ou « le » pour « les ».
+  const shortest = expected.length <= heard.length ? expected : heard;
+  const longest = expected.length > heard.length ? expected : heard;
+  if (shortest.length >= 2 && longest.length === shortest.length + 1 && longest.startsWith(shortest) && FLEXIBLE_ENDINGS.has(longest.at(-1) || "")) return true;
+
+  const tolerance = expected.length >= 9 ? 2 : expected.length >= 5 ? 1 : 0;
+  return tolerance > 0 && Math.abs(heard.length - expected.length) <= tolerance && distance(heard, expected) <= tolerance;
+}
+
 export function readingMatches(expected: string, transcript: string, context = transcript) {
   const heard = normalize(`${context} ${transcript}`);
   const target = normalize(expected);
@@ -32,9 +48,7 @@ export function readingMatches(expected: string, transcript: string, context = t
       assembled += tokens[end]; candidates.add(assembled);
     }
   }
-  if ([...candidates].some((candidate) => candidate === target || candidate.includes(target))) return true;
-  const tolerance = target.length >= 9 ? 2 : target.length >= 5 ? 1 : 0;
-  return tolerance > 0 && [...candidates].some((candidate) => Math.abs(candidate.length - target.length) <= tolerance && distance(candidate, target) <= tolerance);
+  return [...candidates].some((candidate) => wordMatches(target, candidate));
 }
 
 export function readPrefixCount(phrase: string, spoken: string) {
@@ -42,18 +56,40 @@ export function readPrefixCount(phrase: string, spoken: string) {
   const phraseWords = normalize(phrase).split(" ").filter(Boolean);
   let best = 0;
   for (let start = 0; start < heardWords.length; start += 1) {
-    let matched = 0;
+    let phraseIndex = 0;
+    let matchedAnything = false;
     let noise = 0;
-    for (let heardIndex = start; heardIndex < heardWords.length && matched < phraseWords.length; heardIndex += 1) {
+    for (let heardIndex = start; heardIndex < heardWords.length && phraseIndex < phraseWords.length;) {
       const heard = heardWords[heardIndex];
-      const expected = phraseWords[matched];
-      const tolerance = expected.length >= 6 ? 1 : 0;
-      const sameWord = heard === expected || (tolerance > 0 && Math.abs(heard.length - expected.length) <= tolerance && distance(heard, expected) <= tolerance);
-      if (sameWord) { matched += 1; noise = 0; }
-      else if (matched > 0) { noise += 1; if (noise > 2) break; }
-      else break;
+      const expected = phraseWords[phraseIndex];
+      if (wordMatches(expected, heard)) {
+        phraseIndex += 1;
+        heardIndex += 1;
+        matchedAnything = true;
+        noise = 0;
+        best = Math.max(best, phraseIndex);
+        continue;
+      }
+
+      // Les déterminants très courts disparaissent régulièrement des résultats
+      // du micro. On ne les colore qu’une fois le mot suivant reconnu.
+      if (OPTIONAL_SPOKEN_WORDS.has(expected)) {
+        phraseIndex += 1;
+        continue;
+      }
+
+      if (phraseIndex > 0 && noise < 2) {
+        noise += 1;
+        heardIndex += 1;
+        continue;
+      }
+      break;
     }
-    best = Math.max(best, matched);
+
+    if (matchedAnything) {
+      while (phraseIndex < phraseWords.length && OPTIONAL_SPOKEN_WORDS.has(phraseWords[phraseIndex])) phraseIndex += 1;
+      best = Math.max(best, phraseIndex);
+    }
   }
   return best;
 }

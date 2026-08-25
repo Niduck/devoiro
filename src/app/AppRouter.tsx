@@ -4,7 +4,7 @@ import { ActivityScreen, ReadingMenu } from "../components/HomeScreens";
 import { DailyStepResult, FinalReward, ParentInstruction, ReadingSession, type SessionDefinition, type SessionResult } from "../components/ReadingFlow";
 import { DailyOverview, PunctualSetup } from "../components/ReadingSetup";
 import { GraphismScreen } from "../components/GraphismScreen";
-import { KindergartenOralActivity } from "../components/KindergartenActivities";
+import { AlphabetSongActivity, KindergartenOralActivity } from "../components/KindergartenActivities";
 import { LandingPage } from "../components/LandingPage";
 import { ProfileScreen, ProfileSettings } from "../components/ProfileScreen";
 import { Shell } from "../components/Shell";
@@ -118,7 +118,9 @@ export function AppRouter() {
       onReading={() => navigate(routes.reading(profile.id))}
       onWriting={() => navigate(routes.writing(profile.id))}
       onColors={() => navigate(routes.colors(profile.id))}
+      onShapes={() => navigate(routes.shapes(profile.id))}
       onLetterNames={() => navigate(routes.letterNames(profile.id))}
+      onAlphabetSong={() => navigate(routes.alphabetSong(profile.id))}
       onLetterSounds={() => navigate(routes.letterSounds(profile.id))}
       onGraphism={() => navigate(routes.graphism(profile.id))}
       onSettings={() => navigate(routes.settings(profile.id))}
@@ -142,7 +144,9 @@ export function AppRouter() {
 
     <Route path={ROUTE_PATTERNS.writing} element={profileRoute((profile) => <WritingScreen profile={profile} onBack={() => navigate(routes.profile(profile.id))} />)} />
     <Route path={ROUTE_PATTERNS.colors} element={profileRoute((profile) => <KindergartenOralActivity profile={profile} kind="colors" onBack={() => navigate(routes.profile(profile.id))} />)} />
+    <Route path={ROUTE_PATTERNS.shapes} element={profileRoute((profile) => <KindergartenOralActivity profile={profile} kind="shapes" onBack={() => navigate(routes.profile(profile.id))} />)} />
     <Route path={ROUTE_PATTERNS.letterNames} element={profileRoute((profile) => <KindergartenOralActivity profile={profile} kind="letter-name" onBack={() => navigate(routes.profile(profile.id))} />)} />
+    <Route path={ROUTE_PATTERNS.alphabetSong} element={profileRoute((profile) => <AlphabetSongActivity profile={profile} onBack={() => navigate(routes.profile(profile.id))} />)} />
     <Route path={ROUTE_PATTERNS.letterSounds} element={profileRoute((profile) => <KindergartenOralActivity profile={profile} kind="letter-sound" onBack={() => navigate(routes.profile(profile.id))} />)} />
     <Route path={ROUTE_PATTERNS.graphism} element={profileRoute((profile) => <GraphismScreen profile={profile} onBack={() => navigate(routes.profile(profile.id))} />)} />
 
