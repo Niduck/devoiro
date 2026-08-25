@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Devoiro · Laboratoire de personnages</title>
+  <style>
+    @font-face{font-family:Asap;src:url("./character-lab-assets/asap-800.woff2") format("woff2");font-weight:800;font-style:normal;font-display:swap}
+    :root{font-family:Asap,system-ui,sans-serif;color:#172554;background:#eff6ff;--ink:#172554;--primary:#2563EB;--yellow:#FACC15;--orange:#FB923C;--pink:#F472B6;--teal:#38BDF8}
+    *{box-sizing:border-box}body{margin:0;min-width:320px;min-height:100vh}.lab{display:grid;grid-template-columns:370px minmax(520px,1fr);min-height:100vh}.controls{height:100vh;overflow:auto;padding:28px;background:#fff;border-right:1px solid #dce8e6}.eyebrow{color:var(--primary);font-size:12px;letter-spacing:.14em;text-transform:uppercase}.controls h1{font-size:34px;line-height:1;margin:8px 0 10px}.intro{margin:0 0 24px;color:#6d7c7a;font:500 14px/1.5 system-ui,sans-serif}.group{padding:18px 0;border-top:1px solid #e6eceb}.group>label,.group>strong{display:block;margin-bottom:10px;font-size:13px}.segmented{display:flex;padding:4px;background:#edf2f1;border-radius:13px}.segmented button{flex:1;border:0;border-radius:10px;background:transparent;padding:10px;cursor:pointer;font:800 13px Asap}.segmented button.active{background:#fff;color:var(--primary);box-shadow:0 3px 12px #173d3920}.field{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}.field label{display:grid;gap:6px;color:#647370;font:600 11px system-ui,sans-serif}.field input,.field select,.group>select,.letter-input{width:100%;border:2px solid #dce5e3;border-radius:11px;background:#fff;padding:9px 10px;color:var(--ink);font:700 14px Asap}.field input[type=color]{height:42px;padding:4px}.field input[type=range]{padding:0;border:0;accent-color:var(--primary)}.letter-input{text-align:center;text-transform:uppercase;font-size:28px;padding:9px}.actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;position:sticky;bottom:-28px;margin:0 -28px -28px;padding:18px 28px 28px;background:linear-gradient(transparent,#fff 16px)}button{color:inherit}.button{border:0;border-radius:13px;padding:13px;cursor:pointer;font:800 13px Asap}.button.primary{background:var(--primary);color:#fff;box-shadow:0 5px 0 #1d4ed8}.button.secondary{background:#dbeafe;color:#1d4ed8}.button.wide{grid-column:1/-1}.stage{position:relative;display:grid;place-items:center;min-width:0;padding:45px;background:#eff6ff}.stage:before,.stage:after{content:"";position:absolute;border-radius:50%;filter:blur(1px);opacity:.55}.stage:before{width:180px;height:180px;top:5%;right:8%;background:#ffe8a0}.stage:after{width:130px;height:130px;bottom:8%;left:8%;background:#f8c4ce}.preview-card{position:relative;z-index:1;width:min(680px,80vh,100%);aspect-ratio:1;border-radius:42px;background:#fff;box-shadow:0 30px 90px #173d3920;padding:7%}.preview-card svg{display:block;width:100%;height:100%}.preview-note{position:absolute;z-index:2;bottom:18px;color:#71817e;font:600 12px system-ui,sans-serif}.toast{position:fixed;z-index:10;left:50%;bottom:24px;transform:translateX(-50%);background:#172554;color:#fff;border-radius:12px;padding:10px 16px;font:700 13px system-ui,sans-serif;opacity:0;pointer-events:none;transition:.2s}.toast.show{opacity:1}@media(max-width:900px){.lab{grid-template-columns:1fr}.controls{height:auto;border-right:0}.stage{min-height:650px}.actions{position:static;margin:0;padding:18px 0 0;background:none}}@media(max-width:520px){.controls{padding:22px}.field{grid-template-columns:1fr}.stage{min-height:480px;padding:20px}.preview-card{border-radius:26px}.actions{grid-template-columns:1fr}.button.wide{grid-column:auto}}
+    .palette-label{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:14px 0 8px;color:#647370;font:700 11px system-ui,sans-serif}.palette-swatches{display:flex;flex-wrap:wrap;gap:7px}.palette-swatch{width:27px;height:27px;border:3px solid #fff;border-radius:50%;padding:0;cursor:pointer;box-shadow:0 0 0 1px #cad8d5}.palette-random{width:100%;margin-top:11px;border:0;border-radius:11px;background:#dbeafe;color:#1d4ed8;padding:10px;cursor:pointer;font:800 12px Asap}.palette-random:hover{background:#dcefed}
+  </style>
+</head>
+<body>
+  <main class="lab">
+    <aside class="controls">
+      <span class="eyebrow">Outil caché · Devoiro</span>
+      <h1>Fabrique à personnages</h1>
+      <p class="intro">Crée une forme ou une lettre vivante, puis exporte-la en SVG autonome.</p>
+
+      <section class="group">
+        <strong>Type de personnage</strong>
+        <div class="segmented" id="mode-switch"><button class="active" data-mode="shape">Forme</button><button data-mode="letter">Lettre</button></div>
+        <div id="shape-control" style="margin-top:12px"><select id="shape"><option value="circle">Rond</option><option value="square">Carré arrondi</option><option value="triangle">Triangle</option><option value="pentagon">Pentagone</option><option value="star">Étoile</option><option value="heart">Cœur</option><option value="cloud">Nuage</option><option value="blob">Forme souple</option></select></div>
+        <div id="letter-control" style="display:none;margin-top:12px"><input id="letter" class="letter-input" value="A" maxlength="1" aria-label="Lettre du personnage" /></div>
+      </section>
+
+      <section class="group">
+        <strong>Couleurs</strong>
+        <div class="field"><label>Personnage<input type="color" id="body-color" value="#38BDF8" /></label><label>Décor<input type="color" id="decor-color" value="#FACC15" /></label></div>
+        <div class="field"><label>Contour<input type="color" id="outline-color" value="#172554" /></label><label>Visage<input type="color" id="face-color" value="#172554" /></label></div>
+        <div class="palette-label"><span>Palette des illustrations</span><span>Cliquer pour appliquer</span></div>
+        <div class="palette-swatches" id="palette-swatches"></div>
+        <button class="palette-random" id="random-colors">Couleurs aléatoires dans la palette</button>
+      </section>
+
+      <section class="group">
+        <strong>Visage</strong>
+        <div class="field"><label>Yeux<select id="eyes"><option value="round">Ronds</option><option value="happy">Joyeux</option><option value="sleepy">Endormis</option><option value="stars">Étoiles</option><option value="wink">Clin d’œil</option></select></label><label>Bouche<select id="mouth"><option value="smile">Sourire</option><option value="open">Grand sourire</option><option value="tiny">Petit sourire</option><option value="surprised">Surprise</option><option value="neutral">Neutre</option></select></label></div>
+        <div class="field"><label>Écart des yeux<input type="range" id="eye-gap" min="45" max="130" value="84" /></label><label>Taille des yeux<input type="range" id="eye-size" min="12" max="36" value="25" /></label></div>
+        <div class="field"><label>Hauteur du visage<input type="range" id="face-y" min="175" max="310" value="240" /></label><label>Rotation<input type="range" id="rotation" min="-20" max="20" value="0" /></label></div>
+      </section>
+
+      <section class="group">
+        <strong>Détails</strong>
+        <div class="field"><label>Décor<select id="decor"><option value="blob">Tache souple</option><option value="circle">Halo rond</option><option value="none">Aucun</option></select></label><label>Accessoire<select id="accessory"><option value="none">Aucun</option><option value="sparkle">Étincelle</option><option value="cheeks">Joues roses</option><option value="crown">Couronne</option></select></label></div>
+        <div class="field"><label>Épaisseur du contour<input type="range" id="stroke-width" min="0" max="14" value="0" /></label><label>Inclure une ombre<select id="shadow"><option value="yes">Oui</option><option value="no">Non</option></select></label></div>
+      </section>
+
+      <div class="actions"><button class="button secondary" id="randomize">Aléatoire</button><button class="button secondary" id="copy">Copier le SVG</button><button class="button primary wide" id="download">↓ Télécharger le SVG</button></div>
+    </aside>
+
+    <section class="stage"><div class="preview-card"><svg id="preview" viewBox="0 0 500 500" role="img" aria-label="Aperçu du personnage"></svg></div><div class="preview-note">Aperçu carré · export SVG 500 × 500</div></section>
+  </main>
+  <div class="toast" id="toast"></div>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const controls = ["shape","letter","body-color","decor-color","outline-color","face-color","eyes","mouth","eye-gap","eye-size","face-y","rotation","decor","accessory","stroke-width","shadow"];
+    const palette = ["#FACC15","#FB923C","#38BDF8","#0EA5E9","#2563EB","#F97316","#F472B6","#F472B6","#FACC15","#FEF3C7"];
+    const pick = (values) => values[Math.floor(Math.random() * values.length)];
+    let mode = "shape";
+    let embeddedFont = "";
+
+    fetch("./character-lab-assets/asap-800.woff2").then((response) => response.arrayBuffer()).then((buffer) => {
+      const bytes = new Uint8Array(buffer); let binary = "";
+      for (let index = 0; index < bytes.length; index += 8192) binary += String.fromCharCode(...bytes.subarray(index, index + 8192));
+      embeddedFont = `data:font/woff2;base64,${btoa(binary)}`;
+    });
+
+    function starPoints(cx, cy, outer, inner, count = 5) {
+      return Array.from({length:count * 2}, (_, index) => { const radius = index % 2 ? inner : outer; const angle = -Math.PI / 2 + index * Math.PI / count; return `${cx + Math.cos(angle) * radius},${cy + Math.sin(angle) * radius}`; }).join(" ");
+    }
+
+    function bodyMarkup(shape, fill, stroke, width) {
+      const common = `fill="${fill}" stroke="${stroke}" stroke-width="${width}" stroke-linejoin="round"`;
+      if (shape === "circle") return `<circle cx="250" cy="255" r="150" ${common}/>`;
+      if (shape === "square") return `<rect x="105" y="110" width="290" height="290" rx="70" ${common}/>`;
+      if (shape === "triangle") return `<path d="M250 85 L420 390 Q425 405 405 405 H95 Q75 405 82 388 Z" ${common}/>`;
+      if (shape === "pentagon") return `<polygon points="250,72 420,195 355,397 145,397 80,195" ${common}/>`;
+      if (shape === "star") return `<polygon points="${starPoints(250,250,180,88)}" ${common}/>`;
+      if (shape === "heart") return `<path d="M250 410 C225 375 75 282 75 170 C75 65 205 60 250 145 C295 60 425 65 425 170 C425 282 275 375 250 410 Z" ${common}/>`;
+      if (shape === "cloud") return `<path d="M108 350 C40 320 65 225 135 220 C135 135 235 105 285 170 C355 120 430 180 405 250 C475 290 425 385 350 365 C290 430 180 410 155 365 C135 365 120 360 108 350 Z" ${common}/>`;
+      return `<path d="M95 160 C145 70 235 110 285 80 C370 30 420 125 395 195 C455 255 410 365 325 375 C245 450 155 395 135 330 C45 295 40 215 95 160 Z" ${common}/>`;
+    }
+
+    function eyesMarkup(style, cx, y, gap, size, color) {
+      const left = cx - gap / 2, right = cx + gap / 2;
+      const round = (x) => `<circle cx="${x}" cy="${y}" r="${size}" fill="${color}"/><circle cx="${x - size * .28}" cy="${y - size * .32}" r="${Math.max(3,size * .2)}" fill="#fff"/>`;
+      if (style === "happy") return `<path d="M${left-size} ${y+5} Q${left} ${y-size} ${left+size} ${y+5} M${right-size} ${y+5} Q${right} ${y-size} ${right+size} ${y+5}" fill="none" stroke="${color}" stroke-width="9" stroke-linecap="round"/>`;
+      if (style === "sleepy") return `<path d="M${left-size} ${y-3} Q${left} ${y+size*.8} ${left+size} ${y-3} M${right-size} ${y-3} Q${right} ${y+size*.8} ${right+size} ${y-3}" fill="none" stroke="${color}" stroke-width="9" stroke-linecap="round"/>`;
+      if (style === "stars") return `<polygon points="${starPoints(left,y,size,size*.45)}" fill="${color}"/><polygon points="${starPoints(right,y,size,size*.45)}" fill="${color}"/>`;
+      if (style === "wink") return `${round(left)}<path d="M${right-size} ${y} Q${right} ${y+size*.7} ${right+size} ${y}" fill="none" stroke="${color}" stroke-width="9" stroke-linecap="round"/>`;
+      return round(left) + round(right);
+    }
+
+    function mouthMarkup(style, cx, y, color) {
+      if (style === "open") return `<path d="M${cx-37} ${y} Q${cx} ${y+60} ${cx+37} ${y} Z" fill="${color}"/><path d="M${cx-23} ${y+25} Q${cx} ${y+43} ${cx+23} ${y+25}" fill="none" stroke="#F472B6" stroke-width="10" stroke-linecap="round"/>`;
+      if (style === "surprised") return `<ellipse cx="${cx}" cy="${y+16}" rx="19" ry="27" fill="${color}"/>`;
+      if (style === "neutral") return `<path d="M${cx-25} ${y+12} H${cx+25}" stroke="${color}" stroke-width="8" stroke-linecap="round"/>`;
+      const width = style === "tiny" ? 22 : 38, depth = style === "tiny" ? 17 : 32;
+      return `<path d="M${cx-width} ${y} Q${cx} ${y+depth} ${cx+width} ${y}" fill="none" stroke="${color}" stroke-width="8" stroke-linecap="round"/>`;
+    }
+
+    function decorMarkup(type, color) {
+      if (type === "none") return "";
+      if (type === "circle") return `<circle cx="250" cy="250" r="218" fill="${color}" opacity=".32"/>`;
+      return `<path d="M57 182 C82 65 200 58 265 93 C365 42 445 127 421 224 C476 315 381 439 282 414 C189 462 66 397 81 302 C25 270 20 218 57 182 Z" fill="${color}" opacity=".32"/>`;
+    }
+
+    function accessoryMarkup(type, color) {
+      if (type === "sparkle") return `<polygon points="${starPoints(365,112,34,9,4)}" fill="${color}"/><polygon points="${starPoints(405,150,17,5,4)}" fill="${color}"/>`;
+      if (type === "cheeks") return `<ellipse cx="155" cy="295" rx="31" ry="17" fill="#F472B6" opacity=".55"/><ellipse cx="345" cy="295" rx="31" ry="17" fill="#F472B6" opacity=".55"/>`;
+      if (type === "crown") return `<path d="M175 135 L192 78 L235 116 L275 70 L308 116 L355 80 L342 145 Z" fill="${color}" stroke="#172554" stroke-width="5" stroke-linejoin="round"/>`;
+      return "";
+    }
+
+    function svgMarkup(embed = false) {
+      const fill = $("body-color").value, decorColor = $("decor-color").value, outline = $("outline-color").value, face = $("face-color").value;
+      const eyeY = Number($("face-y").value), gap = Number($("eye-gap").value), eyeSize = Number($("eye-size").value), rotation = Number($("rotation").value), stroke = Number($("stroke-width").value);
+      const shadow = $("shadow").value === "yes" ? "filter:drop-shadow(0 18px 16px rgba(5,51,48,.18))" : "";
+      const fontStyle = embed && embeddedFont ? `@font-face{font-family:AsapEmbedded;src:url('${embeddedFont}') format('woff2');font-weight:800}` : "";
+      const letter = ($("letter").value || "A").slice(0,1).toLocaleUpperCase("fr-FR").replace(/[<>&\"']/g, "");
+      const body = mode === "letter" ? `<text x="250" y="382" text-anchor="middle" fill="${fill}" stroke="${outline}" stroke-width="${stroke}" paint-order="stroke" style="font-family:${embed ? "AsapEmbedded" : "Asap"},sans-serif;font-size:370px;font-weight:800">${letter}</text>` : bodyMarkup($("shape").value, fill, outline, stroke);
+      return `<svg xmlns="http://www.w3.org/2000/svg" width="500" height="500" viewBox="0 0 500 500"><style>${fontStyle}</style><g>${decorMarkup($("decor").value, decorColor)}</g><g transform="rotate(${rotation} 250 250)" style="${shadow}">${body}${accessoryMarkup($("accessory").value, decorColor)}<g>${eyesMarkup($("eyes").value,250,eyeY,gap,eyeSize,face)}${mouthMarkup($("mouth").value,250,eyeY+58,face)}</g></g></svg>`;
+    }
+
+    function render() { $("preview").outerHTML = svgMarkup(false).replace("<svg ", '<svg id="preview" role="img" aria-label="Aperçu du personnage" '); }
+    function showToast(message) { const toast = $("toast"); toast.textContent = message; toast.classList.add("show"); setTimeout(() => toast.classList.remove("show"), 1600); }
+    function safeName() { return mode === "letter" ? `lettre-${($("letter").value || "a").toLowerCase()}` : `forme-${$("shape").value}`; }
+    function randomizeColors() { $("body-color").value = pick(palette); $("decor-color").value = pick(palette.filter((color) => color !== $("body-color").value)); render(); }
+
+    $("mode-switch").addEventListener("click", (event) => { const button = event.target.closest("button"); if (!button) return; mode = button.dataset.mode; document.querySelectorAll("#mode-switch button").forEach((item) => item.classList.toggle("active", item === button)); $("shape-control").style.display = mode === "shape" ? "block" : "none"; $("letter-control").style.display = mode === "letter" ? "block" : "none"; render(); });
+    controls.forEach((id) => $(id).addEventListener("input", render));
+    palette.forEach((color) => { const button = document.createElement("button"); button.className = "palette-swatch"; button.style.background = color; button.title = color.toUpperCase(); button.setAttribute("aria-label", `Appliquer la couleur ${color}`); button.addEventListener("click", () => { $("body-color").value = color; render(); }); $("palette-swatches").appendChild(button); });
+    $("random-colors").addEventListener("click", randomizeColors);
+    $("randomize").addEventListener("click", () => { randomizeColors(); $("shape").value = pick(["circle","square","triangle","pentagon","star","heart","cloud","blob"]); $("eyes").value = pick(["round","happy","sleepy","stars","wink"]); $("mouth").value = pick(["smile","open","tiny","surprised"]); $("accessory").value = pick(["none","none","sparkle","cheeks","crown"]); $("eye-gap").value = String(60 + Math.floor(Math.random() * 55)); $("eye-size").value = String(17 + Math.floor(Math.random() * 15)); $("rotation").value = String(-10 + Math.floor(Math.random() * 21)); render(); });
+    $("download").addEventListener("click", () => { if (!embeddedFont && mode === "letter") { showToast("La police se charge, réessaie dans une seconde."); return; } const blob = new Blob([svgMarkup(true)], {type:"image/svg+xml"}); const link = document.createElement("a"); link.href = URL.createObjectURL(blob); link.download = `${safeName()}.svg`; link.click(); setTimeout(() => URL.revokeObjectURL(link.href), 1000); });
+    $("copy").addEventListener("click", async () => { if (!embeddedFont && mode === "letter") { showToast("La police se charge, réessaie dans une seconde."); return; } try { await navigator.clipboard.writeText(svgMarkup(true)); showToast("SVG copié !"); } catch { showToast("Copie impossible dans ce navigateur."); } });
+    render();
+  </script>
+</body>
+</html>
