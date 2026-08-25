@@ -18,7 +18,7 @@ function HandwritingText({ children, style, className = "" }: { children: string
 function TraceText({ children, style }: { children: string; style: WritingStyle }) {
   const text = style === "capitales" ? children.toLocaleUpperCase("fr-FR") : children;
   return <svg className={`trace-text ${style}`} width="100%" height="16mm" aria-label={text}>
-    <text x="9mm" y="8mm">{text}</text>
+    <text x="9mm" y="7.7mm">{text}</text>
   </svg>;
 }
 

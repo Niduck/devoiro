@@ -34,16 +34,55 @@ function spiralPath(cx: number, cy: number) {
   return points.map(([x, y], index) => `${index ? "L" : "M"} ${x.toFixed(1)} ${y.toFixed(1)}`).join(" ");
 }
 
-function connectedLoopsPath() {
-  let path = "M 8 66";
-  for (let index = 0; index < 10; index += 1) {
-    const x = 8 + index * 70;
-    path += ` C ${x - 8} 47 ${x - 5} 12 ${x + 23} 8`;
-    path += ` C ${x + 51} 4 ${x + 58} 42 ${x + 42} 59`;
-    path += ` C ${x + 32} 71 ${x + 15} 72 ${x} 66`;
-    path += ` C ${x + 18} 59 ${x + 42} 59 ${x + 70} 66`;
+type LoopRowOptions = {
+  count: number;
+  startX: number;
+  baselineY: number;
+  height: number;
+  loopWidth: number;
+  step: number;
+};
+
+function loopRowPath({ count, startX, baselineY, height, loopWidth, step }: LoopRowOptions) {
+  const topY = baselineY - height;
+  const offsetX = (ratio: number) => Math.round(loopWidth * ratio);
+  const offsetY = (ratio: number) => Math.round(height * ratio);
+  let path = `M ${startX} ${baselineY}`;
+
+  for (let index = 0; index < count; index += 1) {
+    const x = startX + index * step;
+    path += `
+      C ${x + offsetX(.08)} ${baselineY}, ${x + offsetX(.17)} ${baselineY + 2}, ${x + offsetX(.26)} ${baselineY + 1}
+      C ${x + offsetX(.46)} ${baselineY - offsetY(.14)}, ${x + offsetX(.84)} ${baselineY - offsetY(.55)}, ${x + offsetX(.88)} ${topY + offsetY(.22)}
+      C ${x + offsetX(.90)} ${topY + offsetY(.07)}, ${x + offsetX(.77)} ${topY - 2}, ${x + offsetX(.61)} ${topY}
+      C ${x + offsetX(.36)} ${topY + 2}, ${x + offsetX(.16)} ${topY + offsetY(.27)}, ${x + offsetX(.17)} ${topY + offsetY(.56)}
+      C ${x + offsetX(.18)} ${baselineY - offsetY(.28)}, ${x + offsetX(.36)} ${baselineY - offsetY(.06)}, ${x + offsetX(.57)} ${baselineY + 2}
+      C ${x + offsetX(.72)} ${baselineY + 3}, ${x + Math.round(step * .72)} ${baselineY}, ${x + step} ${baselineY}
+    `;
   }
+
   return path;
+}
+
+const LARGE_LOOP_ROW: LoopRowOptions = {
+  count: 6,
+  startX: 30,
+  baselineY: 154,
+  height: 128,
+  loopWidth: 98,
+  step: 140,
+};
+
+function LoopRowDrawing() {
+  return <path
+    d={loopRowPath(LARGE_LOOP_ROW)}
+    fill="none"
+    stroke="#7d8591"
+    strokeWidth="4.5"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    strokeDasharray="0.1 9"
+  />;
 }
 
 function PatternDrawing({ id }: { id: PatternId }) {
@@ -59,7 +98,7 @@ function PatternDrawing({ id }: { id: PatternId }) {
   if (id === "arches") return <path d="M 8 66 Q 38 10 68 66 Q 98 10 128 66 Q 158 10 188 66 Q 218 10 248 66 Q 278 10 308 66 Q 338 10 368 66 Q 398 10 428 66 Q 458 10 488 66 Q 518 10 548 66 Q 578 10 608 66 Q 638 10 668 66 Q 690 24 712 55" {...common} />;
   if (id === "cups") return <path d="M 8 14 Q 38 70 68 14 Q 98 70 128 14 Q 158 70 188 14 Q 218 70 248 14 Q 278 70 308 14 Q 338 70 368 14 Q 398 70 428 14 Q 458 70 488 14 Q 518 70 548 14 Q 578 70 608 14 Q 638 70 668 14 Q 690 56 712 24" {...common} />;
   if (id === "bridges") return <path d="M 8 68 L 8 42 Q 35 10 62 42 L 62 68 M 62 68 L 62 42 Q 89 10 116 42 L 116 68 M 116 68 L 116 42 Q 143 10 170 42 L 170 68 M 170 68 L 170 42 Q 197 10 224 42 L 224 68 M 224 68 L 224 42 Q 251 10 278 42 L 278 68 M 278 68 L 278 42 Q 305 10 332 42 L 332 68 M 332 68 L 332 42 Q 359 10 386 42 L 386 68 M 386 68 L 386 42 Q 413 10 440 42 L 440 68 M 440 68 L 440 42 Q 467 10 494 42 L 494 68 M 494 68 L 494 42 Q 521 10 548 42 L 548 68 M 548 68 L 548 42 Q 575 10 602 42 L 602 68 M 602 68 L 602 42 Q 629 10 656 42 L 656 68 M 656 68 L 656 42 Q 683 10 710 42 L 710 68" {...common} />;
-  if (id === "loops") return <path d={connectedLoopsPath()} {...common} />;
+  if (id === "loops") return <LoopRowDrawing />;
   return <path d="M 8 42 C 38 5 68 5 98 42 S 158 79 188 42 S 248 5 278 42 S 338 79 368 42 S 428 5 458 42 S 518 79 548 42 S 608 5 638 42 S 698 79 712 48" {...common} />;
 }
 
@@ -75,5 +114,5 @@ export function GraphismScreen({ profile, onBack }: { profile: Profile; onBack()
   const chooseLevel = (next: SectionLevel) => { setLevel(next); setSelected(PATTERNS.filter((pattern) => pattern.levels.includes(next)).slice(0, 6).map((pattern) => pattern.id)); };
   const toggle = (id: PatternId) => setSelected((current) => current.includes(id) ? current.filter((item) => item !== id) : current.length >= 8 ? current : [...current, id]);
 
-  return <section className="writing-page graphism-page"><div className="writing-toolbar"><BackButton onClick={onBack} /><span className="eyebrow">Maternelle · Graphisme</span><h1>Créer une fiche de tracés</h1><p>Choisissez jusqu’à huit gestes graphiques à repasser.</p><div className="writing-options"><label><span>Date de la fiche</span><input type="date" value={date} onChange={(event) => setDate(event.target.value)} /></label><div className="field"><span>Niveau indicatif</span><div className="segmented">{(["PS", "MS", "GS"] as SectionLevel[]).map((item) => <button className={level === item ? "active" : ""} key={item} onClick={() => chooseLevel(item)}>{item}</button>)}</div></div></div><div className="pattern-picker">{visible.map((pattern) => <button key={pattern.id} className={selected.includes(pattern.id) ? "selected" : ""} onClick={() => toggle(pattern.id)}><span>{pattern.icon}</span><strong>{pattern.title}</strong><small>{pattern.levels.join(" · ")}</small></button>)}</div><button className="primary-button print-button" disabled={rows.length === 0} onClick={() => window.print()}>Imprimer la fiche</button><small className="print-tip">A4 · échelle 100 % · arrière-plans activés</small></div><div className="worksheet-preview"><div className="preview-label">Aperçu A4</div><article className="a4-sheet graphism-sheet"><header className="worksheet-header"><div><small>DEVOIRO · GRAPHISME · {level}</small><strong>Travail de graphisme de {profile.name}</strong></div><span>du {formatDate(date)}</span></header><p className="graphism-instruction">Je repasse doucement sur les pointillés, de gauche à droite.</p><div className="graphism-rows" style={{ "--pattern-count": Math.max(1, rows.length) } as CSSProperties}>{rows.map((pattern) => <section className="graphism-row" key={pattern.id}><small>{pattern.title}</small><svg viewBox="0 0 720 80" role="img" aria-label={pattern.title}><PatternDrawing id={pattern.id} /></svg></section>)}</div>{rows.length === 0 && <div className="empty-sheet">Choisissez au moins un tracé.</div>}</article></div></section>;
+  return <section className="writing-page graphism-page"><div className="writing-toolbar"><BackButton onClick={onBack} /><span className="eyebrow">Maternelle · Graphisme</span><h1>Créer une fiche de tracés</h1><p>Choisissez jusqu’à huit gestes graphiques à repasser.</p><div className="writing-options"><label><span>Date de la fiche</span><input type="date" value={date} onChange={(event) => setDate(event.target.value)} /></label><div className="field"><span>Niveau indicatif</span><div className="segmented">{(["PS", "MS", "GS"] as SectionLevel[]).map((item) => <button className={level === item ? "active" : ""} key={item} onClick={() => chooseLevel(item)}>{item}</button>)}</div></div></div><div className="pattern-picker">{visible.map((pattern) => <button key={pattern.id} className={selected.includes(pattern.id) ? "selected" : ""} onClick={() => toggle(pattern.id)}><span>{pattern.icon}</span><strong>{pattern.title}</strong><small>{pattern.levels.join(" · ")}</small></button>)}</div><button className="primary-button print-button" disabled={rows.length === 0} onClick={() => window.print()}>Imprimer la fiche</button><small className="print-tip">A4 · échelle 100 % · arrière-plans activés</small></div><div className="worksheet-preview"><div className="preview-label">Aperçu A4</div><article className="a4-sheet graphism-sheet"><header className="worksheet-header"><div><small>DEVOIRO · GRAPHISME · {level}</small><strong>Travail de graphisme de {profile.name}</strong></div><span>du {formatDate(date)}</span></header><p className="graphism-instruction">Je repasse doucement sur les pointillés, de gauche à droite.</p><div className="graphism-rows" style={{ "--pattern-count": Math.max(1, rows.length) } as CSSProperties}>{rows.map((pattern) => <section className="graphism-row" key={pattern.id}><small>{pattern.title}</small><svg viewBox={pattern.id === "loops" ? "0 0 900 190" : "0 0 720 80"} role="img" aria-label={pattern.title}><PatternDrawing id={pattern.id} /></svg></section>)}</div>{rows.length === 0 && <div className="empty-sheet">Choisissez au moins un tracé.</div>}</article></div></section>;
 }
