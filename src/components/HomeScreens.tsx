@@ -1,4 +1,4 @@
-import type { Profile } from "../types";
+import type { ActivityLevel, Profile } from "../types";
 import { BackButton } from "./Shell";
 import activityColors from "../assets/illustrations/devoiros/activity-couleurs.svg";
 import activityWriting from "../assets/illustrations/devoiros/activity-ecriture.svg";
@@ -10,26 +10,81 @@ import activityAlphabetSong from "../assets/illustrations/devoiros/activity-chan
 import activityLetterSounds from "../assets/illustrations/devoiros/lettre-f.svg";
 import { DevoirosAvatar } from "./DevoirosAvatar";
 
-export function ActivityScreen({ profile, onBack, onReading, onWriting, onColors, onShapes, onLetterNames, onAlphabetSong, onLetterSounds, onGraphism, onSettings }: { profile: Profile; onBack(): void; onReading(): void; onWriting(): void; onColors(): void; onShapes(): void; onLetterNames(): void; onAlphabetSong(): void; onLetterSounds(): void; onGraphism(): void; onSettings(): void }) {
-  const kindergarten = profile.schoolLevel === "maternelle";
-  return <section className="page activity-page"><BackButton onClick={onBack} label="Changer de profil" />
-    <div className="welcome-bar"><div className="welcome-line"><DevoirosAvatar id={profile.devoiros} /><div><small>Bonjour</small><strong>{profile.name}</strong></div></div><button className="profile-settings-button" onClick={onSettings}>Récompenses</button></div>
-    <div className="page-heading"><span className="eyebrow">Que fait-on aujourd’hui ?</span><h1>Choisis une activité</h1></div>
-    {kindergarten ? <div className="activity-grid kindergarten-activity-grid">
-      <button className="activity-card colors" onClick={onColors}><img className="activity-illustration" src={activityColors} alt="" loading="lazy" decoding="async" /><div><em>Dès la PS</em><strong>Découverte des couleurs</strong><small>Voir une couleur et dire son nom.</small></div><b>→</b></button>
-      <button className="activity-card shapes" onClick={onShapes}><img className="activity-illustration" src={activityShapes} alt="" loading="lazy" decoding="async" /><div><em>PS · MS</em><strong>Découverte des formes</strong><small>Voir une forme simple et dire son nom.</small></div><b>→</b></button>
-      <button className="activity-card alphabet" onClick={onLetterNames}><img className="activity-illustration" src={activityLetterNames} alt="" loading="lazy" decoding="async" /><div><em>MS · GS</em><strong>Nom des lettres · Aléatoire</strong><small>Reconnaître les lettres dans le désordre.</small></div><b>→</b></button>
-      <button className="activity-card alphabet-song" onClick={onAlphabetSong}><img className="activity-illustration" src={activityAlphabetSong} alt="" loading="lazy" decoding="async" /><div><em>MS · GS</em><strong>Alphabet en chanson</strong><small>Suivre les lettres dans l’ordre en chantant.</small></div><b>→</b></button>
-      <button className="activity-card sounds" onClick={onLetterSounds}><img className="activity-illustration" src={activityLetterSounds} alt="" loading="lazy" decoding="async" /><div><em>GS</em><strong>Son des lettres</strong><small>Dire le son produit par chaque lettre.</small></div><b>→</b></button>
-      <button className="activity-card writing" onClick={onWriting}><img className="activity-illustration" src={activityWriting} alt="" loading="lazy" decoding="async" /><div><em>GS</em><strong>Alphabet · Écriture</strong><small>Repasser les lettres dans un grand quadrillage.</small></div><b>→</b></button>
-      <button className="activity-card graphism" onClick={onGraphism}><img className="activity-illustration" src={activityGraphism} alt="" loading="lazy" decoding="async" /><div><em>PS · MS · GS</em><strong>Graphisme</strong><small>Créer une fiche de gestes en pointillés.</small></div><b>→</b></button>
-    </div> : <div className="activity-grid"><button className="activity-card reading" onClick={onReading}><img className="activity-illustration" src={activityReading} alt="" loading="lazy" decoding="async" /><div><strong>Lecture</strong><small>Lire, parler et progresser</small></div><b>→</b></button><button className="activity-card writing" onClick={onWriting}><img className="activity-illustration" src={activityWriting} alt="" loading="lazy" decoding="async" /><div><strong>Écriture</strong><small>Créer une fiche Seyès personnalisée</small></div><b>→</b></button></div>}
+const LEVELS: { id: ActivityLevel; label: string }[] = [
+  { id: "ps", label: "PS" },
+  { id: "ms", label: "MS" },
+  { id: "gs", label: "GS" },
+  { id: "cp", label: "CP" },
+  { id: "ce1", label: "CE1" },
+];
+
+type ActivityId = "colors" | "shapes" | "letterNames" | "alphabetSong" | "letterSounds" | "reading";
+
+const ONLINE_ACTIVITIES: Array<{
+  id: ActivityId;
+  className: string;
+  title: string;
+  description: string;
+  levels: ActivityLevel[];
+  image: string;
+}> = [
+  { id: "colors", className: "colors", title: "Découverte des couleurs", description: "Voir une couleur et dire son nom.", levels: ["ps", "ms"], image: activityColors },
+  { id: "shapes", className: "shapes", title: "Découverte des formes", description: "Voir une forme simple et dire son nom.", levels: ["ps", "ms"], image: activityShapes },
+  { id: "letterNames", className: "alphabet", title: "Nom des lettres · Aléatoire", description: "Reconnaître les lettres dans le désordre.", levels: ["ms", "gs"], image: activityLetterNames },
+  { id: "alphabetSong", className: "alphabet-song", title: "Alphabet en chanson", description: "Suivre les lettres dans l’ordre en chantant.", levels: ["ms", "gs"], image: activityAlphabetSong },
+  { id: "letterSounds", className: "sounds", title: "Son des lettres", description: "Dire le son produit par chaque lettre.", levels: ["gs"], image: activityLetterSounds },
+  { id: "reading", className: "reading", title: "Lecture à voix haute", description: "Lire des mots et des phrases avec le micro.", levels: ["cp", "ce1"], image: activityReading },
+];
+
+function LevelTabs({ value, onChange }: { value: ActivityLevel; onChange(level: ActivityLevel): void }) {
+  return <div className="activity-level-tabs" role="tablist" aria-label="Filtrer par niveau">
+    {LEVELS.map((level) => <button role="tab" aria-selected={value === level.id} className={value === level.id ? "active" : ""} key={level.id} onClick={() => onChange(level.id)}>{level.label}</button>)}
+  </div>;
+}
+
+export function WorkspaceHome({ onActivities, onWorksheets }: { onActivities(): void; onWorksheets(): void }) {
+  return <section className="page workspace-home">
+    <div className="page-heading"><span className="eyebrow">Que voulez-vous préparer ?</span><h1>Bienvenue dans Devoiro</h1><p>Choisissez une activité à faire à l’écran ou composez une fiche à imprimer.</p></div>
+    <div className="workspace-mode-grid">
+      <button className="workspace-mode-card online" onClick={onActivities}><img src={activityReading} alt="" /><div><small>Jouer et apprendre</small><strong>Activités en ligne</strong><p>Lecture, lettres, couleurs et formes, directement dans le navigateur.</p><b>Voir les activités →</b></div></button>
+      <button className="workspace-mode-card print" onClick={onWorksheets}><img src={activityWriting} alt="" /><div><small>Composer et imprimer</small><strong>Créer une fiche d’activité</strong><p>Mélangez écriture et graphisme sur une ou plusieurs pages A4.</p><b>Créer une fiche →</b></div></button>
+    </div>
+  </section>;
+}
+
+export function ActivityScreen({ level, onLevelChange, onBack, onReading, onColors, onShapes, onLetterNames, onAlphabetSong, onLetterSounds }: {
+  level: ActivityLevel;
+  onLevelChange(level: ActivityLevel): void;
+  onBack(): void;
+  onReading(): void;
+  onColors(): void;
+  onShapes(): void;
+  onLetterNames(): void;
+  onAlphabetSong(): void;
+  onLetterSounds(): void;
+}) {
+  const actions: Record<ActivityId, () => void> = { reading: onReading, colors: onColors, shapes: onShapes, letterNames: onLetterNames, alphabetSong: onAlphabetSong, letterSounds: onLetterSounds };
+  const activities = ONLINE_ACTIVITIES.filter((activity) => activity.levels.includes(level));
+  return <section className="page activity-page"><BackButton onClick={onBack} />
+    <div className="page-heading compact"><span className="eyebrow">Activités en ligne</span><h1>Choisissez une activité</h1><p>Le niveau sert à afficher uniquement les activités adaptées.</p></div>
+    <LevelTabs value={level} onChange={onLevelChange} />
+    <div className="activity-grid kindergarten-activity-grid">{activities.map((activity) => <button className={`activity-card ${activity.className}`} onClick={actions[activity.id]} key={activity.id}><img className="activity-illustration" src={activity.image} alt="" loading="lazy" decoding="async" /><div><em>{activity.levels.map((item) => item.toUpperCase()).join(" · ")}</em><strong>{activity.title}</strong><small>{activity.description}</small></div><b>→</b></button>)}</div>
+  </section>;
+}
+
+export function WorksheetCatalog({ onBack, onComposer, onAlphabet }: { onBack(): void; onComposer(): void; onAlphabet(): void }) {
+  return <section className="page activity-page"><BackButton onClick={onBack} />
+    <div className="page-heading compact"><span className="eyebrow">Fiches à imprimer</span><h1>Créer une fiche d’activité</h1><p>Composez librement une page ou préparez une fiche alphabet.</p></div>
+    <div className="activity-grid worksheet-catalog-grid">
+      <button className="activity-card graphism" onClick={onComposer}><img className="activity-illustration" src={activityGraphism} alt="" /><div><em>PS → CE1</em><strong>Fiche à composer</strong><small>Ajouter et mélanger des exercices d’écriture et de graphisme.</small></div><b>→</b></button>
+      <button className="activity-card writing" onClick={onAlphabet}><img className="activity-illustration" src={activityWriting} alt="" /><div><em>GS</em><strong>Fiche alphabet</strong><small>Créer un grand quadrillage de lettres à repasser.</small></div><b>→</b></button>
+    </div>
   </section>;
 }
 
 export function ReadingMenu({ profile, onBack, onPunctual, onDaily }: { profile: Profile; onBack(): void; onPunctual(): void; onDaily(): void }) {
   return <section className="page reading-menu"><BackButton onClick={onBack} />
-    <div className="page-heading"><span className="eyebrow">Lecture</span><h1>Comment veut-on travailler ?</h1><p>Une petite partie libre ou une séance complète adaptée à {profile.name}.</p></div>
+    <div className="page-heading"><span className="eyebrow">Lecture</span><h1>Comment veut-on travailler ?</h1><p>Une petite partie libre ou une séance complète adaptée au niveau choisi.</p></div>
     <div className="mode-grid"><button className="mode-card" onClick={onPunctual}><span className="mode-symbol">01</span><div><strong>Travail ponctuel</strong><small>Chronométré ou sans chrono, c’est vous qui choisissez.</small></div><b>Configurer →</b></button><button className="mode-card featured" onClick={onDaily}><DevoirosAvatar id={profile.devoiros} className="mode-devoiros" /><div><strong>Travail quotidien</strong><small>Un parcours de plusieurs exercices et un cadeau à la fin.</small></div><b>Commencer →</b></button></div>
   </section>;
 }

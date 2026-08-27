@@ -1,4 +1,5 @@
 export type SchoolLevel = "maternelle" | "cp" | "ce1";
+export type ActivityLevel = "ps" | "ms" | "gs" | "cp" | "ce1";
 export type SchoolPeriod = "debut" | "milieu" | "fin";
 export type ReadingLevel = "facile" | "moyen" | "difficile";
 export type ActivityMode = "ponctuel" | "quotidien";

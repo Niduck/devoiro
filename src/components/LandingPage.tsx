@@ -52,7 +52,7 @@ export function LandingPage() {
   return <main className="landing-page">
     <header className="landing-header">
       <div className="landing-brand"><span className="brand-mark" aria-hidden="true">D</span><span>Devoiro</span></div>
-      <button className="landing-space-button" onClick={() => navigate(routes.profiles)}>Mon espace</button>
+      <button className="landing-space-button" onClick={() => navigate(routes.workspace)}>Ouvrir Devoiro</button>
     </header>
 
     <section className="landing-hero">
@@ -60,7 +60,7 @@ export function LandingPage() {
         <span className="landing-kicker">Pensé pour les devoirs à la maison</span>
         <h1>Un outil pour faire les devoirs ensemble.</h1>
         <p>D’abord créé pour aider mes enfants à lire, Devoiro s’est ensuite ouvert à l’écriture et au graphisme. L’idée reste simple : proposer aux parents des outils concrets pour accompagner les apprentissages à la maison.</p>        <div className="landing-actions">
-          <button className="primary-button" onClick={() => navigate(routes.profiles)}>Accéder à mon espace</button>
+          <button className="primary-button" onClick={() => navigate(routes.workspace)}>Ouvrir Devoiro</button>
           <button className="landing-discover-button" onClick={() => document.getElementById("decouvrir")?.scrollIntoView()}>Voir ce qu’on peut faire</button>
         </div>
         <small>Gratuit · sans compte · sans publicité · aucune donnée envoyée</small>
@@ -105,8 +105,8 @@ export function LandingPage() {
     </section>
 
     <section className="landing-trust">
-      <div><strong>Je ne voulais ni compte, ni serveur, ni données à récupérer.</strong><p>Les profils et la progression restent dans le navigateur. Le site est hébergé gratuitement sur GitHub Pages et le projet n’a aucun modèle économique prévu.</p></div>
-      <button className="primary-button" onClick={() => navigate(routes.profiles)}>Commencer avec mon enfant</button>
+      <div><strong>Je ne voulais ni compte, ni serveur, ni données à récupérer.</strong><p>Tout fonctionne directement dans le navigateur. Le site est hébergé gratuitement sur GitHub Pages et le projet n’a aucun modèle économique prévu.</p></div>
+      <button className="primary-button" onClick={() => navigate(routes.workspace)}>Choisir une activité</button>
     </section>
 
     <footer className="landing-footer"><span>Devoiro</span><small>Un projet familial, non commercial et sans publicité.</small></footer>

@@ -1,17 +1,25 @@
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type CSSProperties, type ReactNode } from "react";
 import { generatedWriting } from "../data/writing";
-import type { Profile } from "../types";
+import type { ActivityLevel, Profile } from "../types";
 import { BackButton } from "./Shell";
 
 export type SectionLevel = "PS" | "MS" | "GS";
 export type PatternId = "verticals" | "horizontals" | "zigzags" | "circles" | "arches" | "cups" | "waves" | "bridges" | "loops" | "squares" | "triangles" | "spirals" | "crosses";
 type WritingStyle = "capitales" | "script";
+type GraphismSize = "large" | "medium" | "small";
+type DiscoveryKind = "shapes" | "smallest" | "largest";
+type BasicShape = "circle" | "square" | "triangle";
 type Pattern = { id: PatternId; title: string; levels: SectionLevel[]; icon: string };
-type WorksheetBlock = { id: string; type: "writing"; text: string; style: WritingStyle } | { id: string; type: "graphism"; patternId: PatternId };
+type WorksheetBlock =
+  | { id: string; type: "writing"; text: string; style: WritingStyle; level: ActivityLevel }
+  | { id: string; type: "graphism"; patternId: PatternId; size: GraphismSize; level: ActivityLevel }
+  | { id: string; type: "discovery"; kind: DiscoveryKind; targetShape?: BasicShape; level: ActivityLevel };
+type WorksheetPreset = { id: string; level: ActivityLevel; title: string; description: string; create(profile: Profile): WorksheetBlock[] };
 
 const PAGE_CAPACITY = 240;
 const WRITING_COST = 60;
-const GRAPHISM_COST = 30;
+const DISCOVERY_COST = 48;
+const GRAPHISM_COST: Record<GraphismSize, number> = { large: 44, medium: 36, small: 30 };
 
 export const PATTERNS: Pattern[] = [
   { id: "verticals", title: "Traits verticaux", levels: ["PS"], icon: "||||" },
@@ -29,10 +37,65 @@ export const PATTERNS: Pattern[] = [
   { id: "crosses", title: "Croix", levels: ["GS"], icon: "× ×" },
 ];
 
+const CATALOG_LEVELS: { id: ActivityLevel; label: string }[] = [
+  { id: "ps", label: "PS" },
+  { id: "ms", label: "MS" },
+  { id: "gs", label: "GS" },
+  { id: "cp", label: "CP" },
+  { id: "ce1", label: "CE1" },
+];
+
+function patternsForLevel(level: ActivityLevel) {
+  if (level === "cp" || level === "ce1") return PATTERNS;
+  const section = level.toUpperCase() as SectionLevel;
+  return PATTERNS.filter((pattern) => pattern.levels.includes(section));
+}
+
+function profileForLevel(profile: Profile, level: ActivityLevel): Profile {
+  return {
+    ...profile,
+    schoolLevel: level === "cp" || level === "ce1" ? level : "maternelle",
+    period: level === "ps" ? "debut" : level === "gs" ? "fin" : "milieu",
+  };
+}
+
 const repeat = (count: number, render: (index: number) => ReactNode) => Array.from({ length: count }, (_, index) => render(index));
 const makeId = () => globalThis.crypto?.randomUUID?.() || `exercise-${Date.now()}-${Math.random()}`;
 const today = () => new Date().toISOString().slice(0, 10);
 const formatDate = (value: string) => value ? new Intl.DateTimeFormat("fr-FR", { day: "2-digit", month: "2-digit", year: "numeric" }).format(new Date(`${value}T12:00:00`)) : "……………………";
+
+function graphismSizeForLevel(level: ActivityLevel): GraphismSize {
+  if (level === "ps") return "large";
+  if (level === "ms") return "medium";
+  return "small";
+}
+
+function graphismBlock(level: ActivityLevel, patternId: PatternId, size = graphismSizeForLevel(level)): WorksheetBlock {
+  return { id: makeId(), type: "graphism", patternId, size, level };
+}
+
+function discoveryBlock(level: ActivityLevel, kind: DiscoveryKind, targetShape?: BasicShape): WorksheetBlock {
+  return { id: makeId(), type: "discovery", kind, targetShape, level };
+}
+
+function writingBlock(profile: Profile, level: ActivityLevel, style: WritingStyle, kind: "word" | "phrase"): WorksheetBlock {
+  return { id: makeId(), type: "writing", text: generatedWriting(profileForLevel(profile, level), kind), style, level };
+}
+
+const WORKSHEET_PRESETS: WorksheetPreset[] = [
+  { id: "ps-lines", level: "ps", title: "Graphisme · traits", description: "Grands traits verticaux et horizontaux.", create: () => [graphismBlock("ps", "verticals"), graphismBlock("ps", "horizontals"), graphismBlock("ps", "verticals"), graphismBlock("ps", "horizontals")] },
+  { id: "ps-curves", level: "ps", title: "Graphisme · courbes", description: "Grands ronds et vagues à repasser.", create: () => [graphismBlock("ps", "circles"), graphismBlock("ps", "waves"), graphismBlock("ps", "circles"), graphismBlock("ps", "waves")] },
+  { id: "ps-shapes", level: "ps", title: "Découverte des formes", description: "Reconnaître le rond, le carré et le triangle.", create: () => [discoveryBlock("ps", "shapes", "circle"), discoveryBlock("ps", "shapes", "square"), discoveryBlock("ps", "shapes", "triangle")] },
+  { id: "ps-sizes", level: "ps", title: "Plus petit · plus grand", description: "Comparer visuellement des objets de tailles différentes.", create: () => [discoveryBlock("ps", "smallest"), discoveryBlock("ps", "largest"), discoveryBlock("ps", "smallest"), discoveryBlock("ps", "largest")] },
+  { id: "ms-rounded", level: "ms", title: "Gestes arrondis", description: "Ponts, coupes, ronds et vagues.", create: () => [graphismBlock("ms", "arches"), graphismBlock("ms", "cups"), graphismBlock("ms", "circles"), graphismBlock("ms", "waves")] },
+  { id: "ms-shapes", level: "ms", title: "Reconnaître les formes", description: "Ronds, carrés et triangles parmi d’autres formes.", create: () => [discoveryBlock("ms", "shapes", "circle"), discoveryBlock("ms", "shapes", "square"), discoveryBlock("ms", "shapes", "triangle")] },
+  { id: "ms-lines", level: "ms", title: "Lignes et changements de direction", description: "Zigzags, créneaux et ponts.", create: () => [graphismBlock("ms", "zigzags"), graphismBlock("ms", "bridges"), graphismBlock("ms", "arches"), graphismBlock("ms", "cups")] },
+  { id: "gs-cursive", level: "gs", title: "Préparation à la cursive", description: "Boucles et gestes continus préparant les liaisons.", create: () => [graphismBlock("gs", "loops"), graphismBlock("gs", "bridges"), graphismBlock("gs", "loops"), graphismBlock("gs", "waves")] },
+  { id: "gs-shapes", level: "gs", title: "Formes et tracés", description: "Carrés, triangles, spirales et croix.", create: () => [graphismBlock("gs", "squares"), graphismBlock("gs", "triangles"), graphismBlock("gs", "spirals"), graphismBlock("gs", "crosses")] },
+  { id: "cp-writing", level: "cp", title: "Écriture · mots", description: "Trois mots à copier en cursive sur lignage Seyès.", create: (profile) => [writingBlock(profile, "cp", "script", "word"), writingBlock(profile, "cp", "script", "word"), writingBlock(profile, "cp", "script", "word")] },
+  { id: "cp-sentences", level: "cp", title: "Écriture · phrases", description: "Trois phrases courtes à copier.", create: (profile) => [writingBlock(profile, "cp", "script", "phrase"), writingBlock(profile, "cp", "script", "phrase")] },
+  { id: "ce1-writing", level: "ce1", title: "Copie · CE1", description: "Des mots puis des phrases à copier avec soin.", create: (profile) => [writingBlock(profile, "ce1", "script", "word"), writingBlock(profile, "ce1", "script", "phrase"), writingBlock(profile, "ce1", "script", "phrase")] },
+];
 
 function spiralPath(cx: number, cy: number) {
   const points = Array.from({ length: 82 }, (_, index) => {
@@ -93,12 +156,41 @@ function TraceText({ children, style }: { children: string; style: WritingStyle 
   return <svg className={`trace-text ${style}`} width="100%" height="16mm" aria-label={text}><text x="9mm" y="7.7mm">{text}</text></svg>;
 }
 
+function patternViewBox(patternId: PatternId, size: GraphismSize = "small") {
+  const fullWidth = patternId === "loops" ? 900 : 720;
+  const height = patternId === "loops" ? 190 : 80;
+  const widthFactor: Record<GraphismSize, number> = { large: 0.58, medium: 0.78, small: 1 };
+  return `0 0 ${Math.round(fullWidth * widthFactor[size])} ${height}`;
+}
+
+function ShapeSymbol({ shape, size = 42 }: { shape: BasicShape; size?: number }) {
+  const common = { fill: "none", stroke: "#737d8c", strokeWidth: 3.2, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
+  return <svg className="shape-symbol" width={size} height={size} viewBox="0 0 60 60" aria-hidden="true">
+    {shape === "circle" && <circle cx="30" cy="30" r="22" {...common} />}
+    {shape === "square" && <rect x="9" y="9" width="42" height="42" rx="2" {...common} />}
+    {shape === "triangle" && <path d="M 30 7 L 54 51 L 6 51 Z" {...common} />}
+  </svg>;
+}
+
+function DiscoveryBlock({ block, number }: { block: Extract<WorksheetBlock, { type: "discovery" }>; number: number }) {
+  if (block.kind === "shapes") {
+    const target = block.targetShape || "circle";
+    const labels: Record<BasicShape, string> = { circle: "ronds", square: "carrés", triangle: "triangles" };
+    const shapes: BasicShape[] = target === "circle" ? ["circle", "triangle", "circle", "square", "triangle", "circle"] : target === "square" ? ["triangle", "square", "circle", "square", "triangle", "square"] : ["square", "triangle", "circle", "triangle", "square", "triangle"];
+    return <section className="composed-block composed-discovery-block"><div className="exercise-label">Exercice {number}</div><strong>Entoure les {labels[target]}.</strong><div className="shape-choice-row">{shapes.map((shape, index) => <ShapeSymbol shape={shape} size={48} key={`${shape}-${index}`} />)}</div></section>;
+  }
+
+  const selectSmallest = block.kind === "smallest";
+  const sizes = selectSmallest ? [54, 30, 43, 65] : [35, 56, 28, 44];
+  return <section className="composed-block composed-discovery-block"><div className="exercise-label">Exercice {number}</div><strong>Entoure le {selectSmallest ? "plus petit" : "plus grand"}.</strong><div className="shape-choice-row size-comparison-row">{sizes.map((size, index) => <ShapeSymbol shape="circle" size={size} key={`${size}-${index}`} />)}</div></section>;
+}
+
 function paginate(blocks: WorksheetBlock[]) {
   const pages: WorksheetBlock[][] = [];
   let page: WorksheetBlock[] = [];
   let used = 0;
   blocks.forEach((block) => {
-    const cost = block.type === "writing" ? WRITING_COST : GRAPHISM_COST;
+    const cost = block.type === "writing" ? WRITING_COST : block.type === "discovery" ? DISCOVERY_COST : GRAPHISM_COST[block.size];
     if (page.length && used + cost > PAGE_CAPACITY) {
       pages.push(page);
       page = [];
@@ -111,8 +203,8 @@ function paginate(blocks: WorksheetBlock[]) {
   return pages.length ? pages : [[]];
 }
 
-function SheetHeader({ profile, date, label }: { profile: Profile; date: string; label: string }) {
-  return <header className="worksheet-header"><div><small>DEVOIRO · {label}</small><strong>Travail de {profile.name}</strong></div><span>du {formatDate(date)}</span></header>;
+function SheetHeader({ studentName, date, label }: { studentName: string; date: string; label: string }) {
+  return <header className="worksheet-header"><div><small>DEVOIRO · {label}</small><strong>Travail de {studentName.trim() || "……………………"}</strong></div><span>du {formatDate(date)}</span></header>;
 }
 
 function WritingBlock({ block, number }: { block: Extract<WorksheetBlock, { type: "writing" }>; number: number }) {
@@ -122,7 +214,15 @@ function WritingBlock({ block, number }: { block: Extract<WorksheetBlock, { type
 
 function GraphismBlock({ block, number }: { block: Extract<WorksheetBlock, { type: "graphism" }>; number: number }) {
   const pattern = PATTERNS.find((item) => item.id === block.patternId) || PATTERNS[0];
-  return <section className="composed-block composed-graphism-block"><div className="exercise-label">Exercice {number}</div><small>{pattern.title}</small><svg viewBox={pattern.id === "loops" ? "0 0 900 190" : "0 0 720 80"} role="img" aria-label={pattern.title}><PatternDrawing id={pattern.id} /></svg></section>;
+  const heights: Record<GraphismSize, number> = { large: 42, medium: 34, small: 28 };
+  return <section className={`composed-block composed-graphism-block graphism-${block.size}`} style={{ "--graphism-height": `${heights[block.size]}mm` } as CSSProperties}><div className="exercise-label">Exercice {number}</div><small>{pattern.title}</small><svg viewBox={patternViewBox(pattern.id, block.size)} role="img" aria-label={pattern.title}><PatternDrawing id={pattern.id} /></svg></section>;
+}
+
+function blockTitle(block: WorksheetBlock) {
+  if (block.type === "writing") return "Écriture";
+  if (block.type === "graphism") return PATTERNS.find((pattern) => pattern.id === block.patternId)?.title || "Graphisme";
+  if (block.kind === "shapes") return "Découverte des formes";
+  return block.kind === "smallest" ? "Trouver le plus petit" : "Trouver le plus grand";
 }
 
 type WorksheetComposerProps = {
@@ -134,19 +234,26 @@ type WorksheetComposerProps = {
 export function WorksheetComposer({ profile, onBack, mode }: WorksheetComposerProps) {
   const graphismOnly = mode === "graphism";
   const [date, setDate] = useState(today);
+  const [studentName, setStudentName] = useState("");
   const [level, setLevel] = useState<SectionLevel>("MS");
+  const [catalogLevel, setCatalogLevel] = useState<ActivityLevel>("cp");
+  const [presetLevel, setPresetLevel] = useState<ActivityLevel>("ps");
   const [addingExercise, setAddingExercise] = useState(false);
+  const [choosingPreset, setChoosingPreset] = useState(false);
   const [blocks, setBlocks] = useState<WorksheetBlock[]>(() => graphismOnly
-    ? PATTERNS.filter((pattern) => pattern.levels.includes("MS")).slice(0, 6).map((pattern) => ({ id: makeId(), type: "graphism", patternId: pattern.id }))
-    : [{ id: makeId(), type: "writing", text: generatedWriting(profile, "phrase"), style: "script" }]);
+    ? PATTERNS.filter((pattern) => pattern.levels.includes("MS")).slice(0, 6).map((pattern) => graphismBlock("ms", pattern.id))
+    : [{ id: makeId(), type: "writing", text: generatedWriting(profileForLevel(profile, "cp"), "phrase"), style: "script", level: "cp" }]);
   const pages = useMemo(() => paginate(blocks), [blocks]);
-  const availablePatterns = graphismOnly ? PATTERNS.filter((pattern) => pattern.levels.includes(level)) : PATTERNS;
+  const availablePatterns = graphismOnly ? PATTERNS.filter((pattern) => pattern.levels.includes(level)) : patternsForLevel(catalogLevel);
 
   useEffect(() => {
-    if (!addingExercise) return;
+    if (!addingExercise && !choosingPreset) return;
     const previousOverflow = document.body.style.overflow;
     const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setAddingExercise(false);
+      if (event.key === "Escape") {
+        setAddingExercise(false);
+        setChoosingPreset(false);
+      }
     };
     document.body.style.overflow = "hidden";
     document.addEventListener("keydown", closeOnEscape);
@@ -154,7 +261,7 @@ export function WorksheetComposer({ profile, onBack, mode }: WorksheetComposerPr
       document.body.style.overflow = previousOverflow;
       document.removeEventListener("keydown", closeOnEscape);
     };
-  }, [addingExercise]);
+  }, [addingExercise, choosingPreset]);
 
   const updateBlock = (id: string, update: Partial<WorksheetBlock>) => setBlocks((current) => current.map((block) => block.id === id ? { ...block, ...update } as WorksheetBlock : block));
   const removeBlock = (id: string) => setBlocks((current) => current.filter((block) => block.id !== id));
@@ -166,38 +273,62 @@ export function WorksheetComposer({ profile, onBack, mode }: WorksheetComposerPr
     return next;
   });
   const addWriting = (style: WritingStyle) => {
-    setBlocks((current) => [...current, { id: makeId(), type: "writing", text: generatedWriting(profile, "phrase"), style }]);
+    setBlocks((current) => [...current, { id: makeId(), type: "writing", text: generatedWriting(profileForLevel(profile, catalogLevel), "phrase"), style, level: catalogLevel }]);
     setAddingExercise(false);
   };
   const addGraphism = (patternId: PatternId) => {
-    setBlocks((current) => [...current, { id: makeId(), type: "graphism", patternId }]);
+    const blockLevel = graphismOnly ? level.toLowerCase() as ActivityLevel : catalogLevel;
+    setBlocks((current) => [...current, graphismBlock(blockLevel, patternId)]);
     setAddingExercise(false);
+  };
+  const addDiscovery = (kind: DiscoveryKind) => {
+    const targetShape = kind === "shapes" ? "circle" : undefined;
+    setBlocks((current) => [...current, discoveryBlock(catalogLevel, kind, targetShape)]);
+    setAddingExercise(false);
+  };
+  const applyPreset = (preset: WorksheetPreset) => {
+    setBlocks(preset.create(profile));
+    setChoosingPreset(false);
   };
   const chooseLevel = (next: SectionLevel) => {
     const patterns = PATTERNS.filter((pattern) => pattern.levels.includes(next));
     setLevel(next);
-    setBlocks((current) => current.map((block) => block.type === "graphism" && !patterns.some((pattern) => pattern.id === block.patternId) ? { ...block, patternId: patterns[0].id } : block));
+    setBlocks((current) => current.map((block) => block.type === "graphism" ? { ...block, level: next.toLowerCase() as ActivityLevel, size: graphismSizeForLevel(next.toLowerCase() as ActivityLevel), ...(!patterns.some((pattern) => pattern.id === block.patternId) ? { patternId: patterns[0].id } : {}) } : block));
   };
 
   return <section className="writing-page composer-page">
-    <div className="writing-toolbar"><BackButton onClick={onBack} /><br /><span className="eyebrow">{graphismOnly ? "Maternelle · Graphisme" : `Écriture · ${profile.schoolLevel.toUpperCase()}`}</span><h1>Composer une fiche</h1><p>Ajoutez et ordonnez les exercices. Une nouvelle page est créée automatiquement si nécessaire.</p>
-      <div className="writing-options"><label><span>Date de la fiche</span><input type="date" value={date} onChange={(event) => setDate(event.target.value)} /></label>
+    <div className="writing-toolbar"><BackButton onClick={onBack} /><br /><span className="eyebrow">{graphismOnly ? "Maternelle · Graphisme" : "Fiche à composer"}</span><h1>Composer une fiche</h1><p>Ajoutez et ordonnez les exercices. Une nouvelle page est créée automatiquement si nécessaire.</p>
+      <div className="writing-options"><label><span>Prénom sur la fiche</span><input type="text" value={studentName} maxLength={30} placeholder="Prénom de l’enfant" onChange={(event) => setStudentName(event.target.value)} /></label><label><span>Date de la fiche</span><input type="date" value={date} onChange={(event) => setDate(event.target.value)} /></label>
         {graphismOnly && <div className="field"><span>Niveau indicatif</span><div className="segmented">{(["PS", "MS", "GS"] as SectionLevel[]).map((item) => <button className={level === item ? "active" : ""} key={item} onClick={() => chooseLevel(item)}>{item}</button>)}</div></div>}
       </div>
-      <div className="exercise-block-list">{blocks.map((block, index) => <article className={`exercise-block-editor ${block.type}`} key={block.id}><header><div><small>Exercice {index + 1}</small><strong>{block.type === "writing" ? "Écriture" : PATTERNS.find((pattern) => pattern.id === block.patternId)?.title}</strong></div><div><button disabled={index === 0} onClick={() => moveBlock(index, -1)} aria-label="Monter l’exercice">↑</button><button disabled={index === blocks.length - 1} onClick={() => moveBlock(index, 1)} aria-label="Descendre l’exercice">↓</button><button onClick={() => removeBlock(block.id)} aria-label="Retirer l’exercice">✕</button></div></header>
-        {block.type === "writing" ? <><div className="block-style-picker"><button className={block.style === "capitales" ? "active" : ""} onClick={() => updateBlock(block.id, { style: "capitales" })}>CAPITALES</button><button className={block.style === "script" ? "active script-option" : "script-option"} onClick={() => updateBlock(block.id, { style: "script" })}>Cursive</button></div><textarea value={block.text} onChange={(event) => updateBlock(block.id, { text: event.target.value })} maxLength={70} rows={2} placeholder="Saisir un mot ou une phrase" /><div className="generator-buttons"><button onClick={() => updateBlock(block.id, { text: generatedWriting(profile, "word") })}>Générer un mot</button><button onClick={() => updateBlock(block.id, { text: generatedWriting(profile, "phrase") })}>Générer une phrase</button></div></> : <select value={block.patternId} onChange={(event) => updateBlock(block.id, { patternId: event.target.value as PatternId })}>{availablePatterns.map((pattern) => <option key={pattern.id} value={pattern.id}>{pattern.title}</option>)}</select>}
+      <button className="open-preset-catalog" onClick={() => setChoosingPreset(true)}><span>Fiches prêtes à l’emploi</span><strong>Choisir un modèle par niveau →</strong></button>
+      <div className="exercise-block-list">{blocks.map((block, index) => <article className={`exercise-block-editor ${block.type}`} key={block.id}><header><div><small>Exercice {index + 1} · {block.level.toUpperCase()}</small><strong>{blockTitle(block)}</strong></div><div><button disabled={index === 0} onClick={() => moveBlock(index, -1)} aria-label="Monter l’exercice">↑</button><button disabled={index === blocks.length - 1} onClick={() => moveBlock(index, 1)} aria-label="Descendre l’exercice">↓</button><button onClick={() => removeBlock(block.id)} aria-label="Retirer l’exercice">✕</button></div></header>
+        {block.type === "writing" && <><div className="block-style-picker"><button className={block.style === "capitales" ? "active" : ""} onClick={() => updateBlock(block.id, { style: "capitales" })}>CAPITALES</button><button className={block.style === "script" ? "active script-option" : "script-option"} onClick={() => updateBlock(block.id, { style: "script" })}>Cursive</button></div><textarea value={block.text} onChange={(event) => updateBlock(block.id, { text: event.target.value })} maxLength={70} rows={2} placeholder="Saisir un mot ou une phrase" /><div className="generator-buttons"><button onClick={() => updateBlock(block.id, { text: generatedWriting(profileForLevel(profile, block.level), "word") })}>Générer un mot</button><button onClick={() => updateBlock(block.id, { text: generatedWriting(profileForLevel(profile, block.level), "phrase") })}>Générer une phrase</button></div></>}
+        {block.type === "graphism" && <><select value={block.patternId} onChange={(event) => updateBlock(block.id, { patternId: event.target.value as PatternId })}>{patternsForLevel(block.level).map((pattern) => <option key={pattern.id} value={pattern.id}>{pattern.title}</option>)}</select><div className="graphism-size-picker"><span>Taille du tracé</span><div className="block-style-picker">{(["large", "medium", "small"] as GraphismSize[]).map((size) => <button className={block.size === size ? "active" : ""} onClick={() => updateBlock(block.id, { size })} key={size}>{size === "large" ? "Grande" : size === "medium" ? "Moyenne" : "Petite"}</button>)}</div></div></>}
+        {block.type === "discovery" && <select value={block.kind === "shapes" ? block.targetShape || "circle" : block.kind} onChange={(event) => { const value = event.target.value; updateBlock(block.id, value === "circle" || value === "square" || value === "triangle" ? { kind: "shapes", targetShape: value as BasicShape } : { kind: value as DiscoveryKind }); }}><option value="circle">Entourer les ronds</option><option value="square">Entourer les carrés</option><option value="triangle">Entourer les triangles</option><option value="smallest">Trouver le plus petit</option><option value="largest">Trouver le plus grand</option></select>}
       </article>)}</div><button className="open-exercise-catalog" onClick={() => setAddingExercise(true)}>+ Ajouter un exercice</button>
       <div className="page-count">{pages.length} page{pages.length > 1 ? "s" : ""} A4</div><button className="primary-button print-button" disabled={blocks.length === 0} onClick={() => window.print()}>Imprimer la fiche</button><small className="print-tip">A4 · échelle 100 % · arrière-plans activés</small>
     </div>
-    <div className="worksheet-preview composed-preview">{pages.map((page, pageIndex) => <div className="preview-page" key={pageIndex}><div className="preview-label">Aperçu A4 · page {pageIndex + 1}/{pages.length}</div><article className="a4-sheet composed-sheet"><SheetHeader profile={profile} date={date} label={graphismOnly ? `GRAPHISME · ${level}` : `EXERCICES · ${profile.schoolLevel.toUpperCase()}`} /><div className="composed-exercises">{page.map((block) => {
+    <div className="worksheet-preview composed-preview">{pages.map((page, pageIndex) => <div className="preview-page" key={pageIndex}><div className="preview-label">Aperçu A4 · page {pageIndex + 1}/{pages.length}</div><article className="a4-sheet composed-sheet"><SheetHeader studentName={studentName} date={date} label={graphismOnly ? `GRAPHISME · ${level}` : "FICHE D’ACTIVITÉS"} /><div className="composed-exercises">{page.map((block) => {
         const number = blocks.findIndex((item) => item.id === block.id) + 1;
-        return block.type === "writing" ? <WritingBlock block={block} number={number} key={block.id} /> : <GraphismBlock block={block} number={number} key={block.id} />;
+        if (block.type === "writing") return <WritingBlock block={block} number={number} key={block.id} />;
+        if (block.type === "graphism") return <GraphismBlock block={block} number={number} key={block.id} />;
+        return <DiscoveryBlock block={block} number={number} key={block.id} />;
       })}</div>{page.length === 0 && <div className="empty-sheet">Ajoutez un premier exercice.</div>}<footer>Je prends mon temps et je m’applique.</footer></article></div>)}</div>
+    {choosingPreset && <div className="exercise-catalog-backdrop" onMouseDown={() => setChoosingPreset(false)}>
+      <div className="exercise-catalog preset-catalog" role="dialog" aria-modal="true" aria-labelledby="preset-catalog-title" onMouseDown={(event) => event.stopPropagation()}>
+        <header><div><small>Fiches prêtes à l’emploi</small><strong id="preset-catalog-title">Choisir un modèle</strong></div><button onClick={() => setChoosingPreset(false)} aria-label="Fermer">✕</button></header>
+        <div className="catalog-level-picker"><small>Niveau de la fiche</small><div className="activity-level-tabs" role="tablist" aria-label="Niveau du modèle">{CATALOG_LEVELS.map((item) => <button role="tab" aria-selected={presetLevel === item.id} className={presetLevel === item.id ? "active" : ""} key={item.id} onClick={() => setPresetLevel(item.id)}>{item.label}</button>)}</div></div>
+        <div className="preset-card-grid">{WORKSHEET_PRESETS.filter((preset) => preset.level === presetLevel).map((preset) => <button key={preset.id} onClick={() => applyPreset(preset)}><span>{preset.level.toUpperCase()}</span><strong>{preset.title}</strong><small>{preset.description}</small><b>Utiliser ce modèle →</b></button>)}</div>
+      </div>
+    </div>}
     {addingExercise && <div className="exercise-catalog-backdrop" onMouseDown={() => setAddingExercise(false)}>
       <div className="exercise-catalog" role="dialog" aria-modal="true" aria-labelledby="exercise-catalog-title" onMouseDown={(event) => event.stopPropagation()}>
         <header><div><small>Nouvel exercice</small><strong id="exercise-catalog-title">Que voulez-vous ajouter ?</strong></div><button onClick={() => setAddingExercise(false)} aria-label="Fermer">✕</button></header>
-        {!graphismOnly && <section><h2>Écriture</h2><div className="writing-catalog-grid"><button onClick={() => addWriting("capitales")}><div className="catalog-writing-preview capitales"><span>ABC</span><i /></div><strong>Écriture en capitales</strong><small>Un modèle et une ligne libre</small></button><button onClick={() => addWriting("script")}><div className="catalog-writing-preview script"><span>bonjour</span><i /></div><strong>Écriture cursive</strong><small>Police scolaire Marelle</small></button></div></section>}
-        <section><h2>Graphisme</h2><div className="graphism-catalog-grid">{availablePatterns.map((pattern) => <button key={pattern.id} onClick={() => addGraphism(pattern.id)}><svg viewBox={pattern.id === "loops" ? "0 0 900 190" : "0 0 720 80"} aria-hidden="true"><PatternDrawing id={pattern.id} /></svg><strong>{pattern.title}</strong><small>{pattern.levels.join(" · ")}</small></button>)}</div></section>
+        {!graphismOnly && <div className="catalog-level-picker"><small>Niveau de l’exercice</small><div className="activity-level-tabs" role="tablist" aria-label="Niveau du nouvel exercice">{CATALOG_LEVELS.map((item) => <button role="tab" aria-selected={catalogLevel === item.id} className={catalogLevel === item.id ? "active" : ""} key={item.id} onClick={() => setCatalogLevel(item.id)}>{item.label}</button>)}</div></div>}
+        {!graphismOnly && ["gs", "cp", "ce1"].includes(catalogLevel) && <section><h2>Écriture</h2><div className="writing-catalog-grid"><button onClick={() => addWriting("capitales")}><div className="catalog-writing-preview capitales"><span>ABC</span><i /></div><strong>Écriture en capitales</strong><small>Un modèle et une ligne libre</small></button><button onClick={() => addWriting("script")}><div className="catalog-writing-preview script"><span>bonjour</span><i /></div><strong>Écriture cursive</strong><small>Police scolaire Marelle</small></button></div></section>}
+        {!graphismOnly && (catalogLevel === "ps" || catalogLevel === "ms") && <section><h2>Découverte</h2><div className="discovery-catalog-grid"><button onClick={() => addDiscovery("shapes")}><div className="catalog-shape-preview"><ShapeSymbol shape="circle" /><ShapeSymbol shape="square" /><ShapeSymbol shape="triangle" /></div><strong>Découverte des formes</strong><small>Entourer une forme donnée</small></button><button onClick={() => addDiscovery("smallest")}><div className="catalog-shape-preview"><ShapeSymbol shape="circle" size={24} /><ShapeSymbol shape="circle" size={48} /><ShapeSymbol shape="circle" size={34} /></div><strong>Plus petit · plus grand</strong><small>Comparer des tailles</small></button></div></section>}
+        <section><h2>Graphisme</h2><div className="graphism-catalog-grid">{availablePatterns.map((pattern) => <button key={pattern.id} onClick={() => addGraphism(pattern.id)}><svg viewBox={patternViewBox(pattern.id)} aria-hidden="true"><PatternDrawing id={pattern.id} /></svg><strong>{pattern.title}</strong><small>{pattern.levels.join(" · ")}</small></button>)}</div></section>
       </div>
     </div>}
   </section>;
