@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { READING_LEVELS, dailySteps } from "../data/curriculum";
-import type { Profile, ReadingAids, ReadingLevel } from "../types";
+import { READING_LEVELS } from "../data/curriculum";
+import type { DailyJourneyStep, Profile, ReadingAids, ReadingLevel } from "../types";
 import { BackButton } from "./Shell";
 import { DevoirosAvatar } from "./DevoirosAvatar";
 
@@ -29,13 +29,12 @@ function PunctualSetupForm({ aids, onAidsChange, onBack, onStart }: { aids: Read
   </section>;
 }
 
-export function DailyOverview({ profile, onBack, onStart }: { profile: Profile; onBack(): void; onStart(): void }) {
-  const steps = dailySteps(profile);
+export function DailyOverview({ profile, steps, onBack, onStart }: { profile: Profile; steps: DailyJourneyStep[]; onBack(): void; onStart(): void }) {
   const enabledRewards = profile.rewards.filter((reward) => reward.enabled).length;
   return <section className="page daily-overview"><BackButton onClick={onBack} />
     <div className="daily-hero"><div><span className="eyebrow">Travail quotidien</span><h1>La grande promenade</h1><p>{steps.length} petites étapes, une progression visible et un cadeau à ouvrir au bout du chemin.</p></div><DevoirosAvatar id={profile.devoiros} className="hero-devoiros" /></div>
     <div className="journey-preview"><div className="journey-line" />{steps.map((step, index) => <div className="journey-stop" key={step.title}><span>{index + 1}</span><strong>{step.title}</strong><small>{step.instruction}</small></div>)}<div className="journey-stop gift"><span className="gift-mark" aria-hidden="true" /><strong>Cadeau</strong><small>Une surprise aléatoire</small></div></div>
     <div className="daily-note"><span className="gift-mark" aria-hidden="true" /><p><strong>{enabledRewards} récompenses sont prêtes.</strong><br />Le cadeau sera choisi selon leur rareté après toutes les étapes.</p></div>
-    <button className="primary-button daily-start" onClick={onStart}>Lire la première consigne →</button>
+    <button className="primary-button daily-start" onClick={onStart}>Commencer le parcours →</button>
   </section>;
 }

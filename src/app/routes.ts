@@ -9,14 +9,16 @@ export const ROUTE_PATTERNS = {
   letterNames: "/activites/maternelle/nom-des-lettres",
   alphabetSong: "/activites/maternelle/alphabet-chante",
   letterSounds: "/activites/maternelle/son-des-lettres",
+  decoding: "/activites/maternelle/decodage",
+  encoding: "/activites/maternelle/encodage",
   composer: "/fiches/composer",
   alphabetWorksheet: "/fiches/alphabet",
   punctualSetup: "/activites/lecture/ponctuelle",
-  dailyOverview: "/activites/lecture/quotidienne",
+  dailyOverview: "/activites/quotidienne",
   instruction: "/activites/lecture/consigne",
   session: "/activites/lecture/session",
   stepResult: "/activites/lecture/resultat",
-  reward: "/activites/lecture/recompense",
+  reward: "/activites/recompense",
 } as const;
 
 export const routes = {

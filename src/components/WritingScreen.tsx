@@ -1,5 +1,8 @@
 import { useState } from "react";
+import { drawReward } from "../data/rewards";
+import type { Profile, Reward } from "../types";
 import { BackButton } from "./Shell";
+import { WorksheetRewardQr } from "./WorksheetRewardQr";
 
 type WritingStyle = "capitales" | "script";
 
@@ -11,16 +14,20 @@ function HandwritingText({ children, style, className = "" }: { children: string
   return <span className={`handwriting ${style} ${className}`}>{style === "capitales" ? children.toLocaleUpperCase("fr-FR") : children}</span>;
 }
 
-export function AlphabetWorksheetScreen({ onBack }: { onBack(): void }) {
+export function AlphabetWorksheetScreen({ profile, onBack }: { profile: Profile; onBack(): void }) {
   const [date, setDate] = useState(today);
   const [studentName, setStudentName] = useState("");
   const [style, setStyle] = useState<WritingStyle>("capitales");
+  const [reward, setReward] = useState<Reward | null>(null);
+  const enabledRewardCount = profile.rewards.filter((item) => item.enabled).length;
+
+  const toggleReward = (enabled: boolean) => setReward(enabled ? drawReward(profile.rewards) : null);
 
   return <section className="writing-page">
     <div className="writing-toolbar"><BackButton onClick={onBack} /><br /><div><span className="eyebrow">Écriture · Maternelle</span><h1>Ma fiche alphabet</h1><p>De grandes lettres grisées à repasser dans un quadrillage.</p></div>
-      <div className="writing-options"><label><span>Prénom sur la fiche</span><input type="text" value={studentName} maxLength={30} placeholder="Prénom de l’enfant" onChange={(event) => setStudentName(event.target.value)} /></label><label><span>Date de la fiche</span><input type="date" value={date} onChange={(event) => setDate(event.target.value)} /></label><div className="field"><span>Type d’exemple</span><div className="segmented"><button className={style === "capitales" ? "active" : ""} onClick={() => setStyle("capitales")}>CAPITALES</button><button className={style === "script" ? "active script-option" : "script-option"} onClick={() => setStyle("script")}>Cursive Marelle</button></div></div></div>
+      <div className="writing-options"><label><span>Prénom sur la fiche</span><input type="text" value={studentName} maxLength={30} placeholder="Prénom de l’enfant" onChange={(event) => setStudentName(event.target.value)} /></label><label><span>Date de la fiche</span><input type="date" value={date} onChange={(event) => setDate(event.target.value)} /></label><div className="field"><span>Type d’exemple</span><div className="segmented"><button className={style === "capitales" ? "active" : ""} onClick={() => setStyle("capitales")}>CAPITALES</button><button className={style === "script" ? "active script-option" : "script-option"} onClick={() => setStyle("script")}>Cursive Marelle</button></div></div><label className="worksheet-reward-toggle"><span><b>QR code récompense</b><small>Une récompense pour cette feuille, à scanner par un adulte.</small></span><input type="checkbox" checked={Boolean(reward)} disabled={!enabledRewardCount} onChange={(event) => toggleReward(event.target.checked)} /></label>{!enabledRewardCount && <small className="worksheet-reward-warning">Activez d’abord une récompense depuis l’accueil.</small>}</div>
       <button className="primary-button print-button" onClick={() => window.print()}>Imprimer la fiche</button><small className="print-tip">Dans la fenêtre d’impression, choisissez A4 et une échelle de 100 %.</small>
     </div>
-    <div className="worksheet-preview"><div className="preview-label">Aperçu A4</div><article className="a4-sheet kindergarten-worksheet"><header className="worksheet-header"><div><small>DEVOIRO · ÉCRITURE</small><strong>Travail d’écriture de {studentName.trim() || "……………………"}</strong></div><span>du {formatDate(date)}</span></header><div className="alphabet-intro"><strong>Je repasse sur chaque lettre.</strong><span>Une lettre à la fois.</span></div><div className="alphabet-grid">{ALPHABET.map((letter) => <div className="letter-cell" key={letter}><HandwritingText style={style} className="trace">{style === "script" ? letter.toLocaleLowerCase("fr-FR") : letter}</HandwritingText></div>)}</div></article></div>
+    <div className="worksheet-preview"><div className="preview-label">Aperçu A4</div><article className={`a4-sheet kindergarten-worksheet ${reward ? "has-reward-qr" : ""}`}><header className="worksheet-header"><div><small>DEVOIRO · ÉCRITURE</small><strong>Travail d’écriture de {studentName.trim() || "……………………"}</strong></div><span>du {formatDate(date)}</span></header><div className="alphabet-intro"><strong>Je repasse sur chaque lettre.</strong><span>Une lettre à la fois.</span></div><div className="alphabet-grid">{ALPHABET.map((letter) => <div className="letter-cell" key={letter}><HandwritingText style={style} className="trace">{style === "script" ? letter.toLocaleLowerCase("fr-FR") : letter}</HandwritingText></div>)}</div><WorksheetRewardQr reward={reward} /></article></div>
   </section>;
 }

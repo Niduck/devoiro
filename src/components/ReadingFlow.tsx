@@ -134,9 +134,10 @@ export function DailyStepResult({ profile, session, result, aids, onAidsChange, 
   </section>;
 }
 
-export function FinalReward({ profile, reward, totalScore, showGift, onDone }: { profile: Profile; reward: Reward | null; totalScore: number; showGift: boolean; onDone(): void }) {
+export function FinalReward({ profile, reward, totalScore, superBravoCount, showGift, onDone }: { profile: Profile; reward: Reward | null; totalScore: number; superBravoCount: number; showGift: boolean; onDone(): void }) {
   const [open, setOpen] = useState(false);
-  return <section className="page final-page"><div className="confetti" aria-hidden="true"><i /><i /><i /></div><DevoirosAvatar id={profile.devoiros} className="final-devoiros" /><h1>{showGift ? "Parcours terminé !" : "Belle lecture !"}</h1><p>Tu as validé {totalScore} lecture{totalScore > 1 ? "s" : ""} aujourd’hui.</p>
+  return <section className="page final-page"><div className="confetti" aria-hidden="true"><i /><i /><i /></div><DevoirosAvatar id={profile.devoiros} className="final-devoiros" /><h1>{showGift ? "Parcours terminé !" : "Belle lecture !"}</h1><p>{showGift ? `Tu as terminé toutes les étapes avec ${totalScore} réussite${totalScore > 1 ? "s" : ""}.` : `Tu as validé ${totalScore} lecture${totalScore > 1 ? "s" : ""} aujourd’hui.`}</p>
+    {showGift && superBravoCount > 0 && <p className="super-bravo-reward-bonus"><strong>{superBravoCount} super bravo !</strong> Tes chances de trouver une récompense rare ont augmenté.</p>}
     {showGift && (!open ? <button className="gift-box" onClick={() => setOpen(true)}><span className="gift-symbol" aria-hidden="true"><i /></span><strong>Ouvrir mon cadeau</strong></button> : <div className="reward-reveal"><small>La récompense du jour</small><strong>{reward?.label || "Un grand bravo !"}</strong></div>)}
     {(!showGift || open) && <button className="primary-button" onClick={onDone}>Retour à l’accueil</button>}
   </section>;

@@ -1,6 +1,6 @@
 # Référentiel pédagogique de Devoiro — PS à CM2
 
-Dernière vérification : 27 août 2026.
+Dernière vérification : 30 août 2026.
 
 ## Objet du document
 
@@ -85,6 +85,7 @@ Les vitesses sont des cibles de travail sur des textes adaptés. Elles ne doiven
 - Générer des fiches de graphisme à grands tracés : lignes, ronds, ponts, vagues et chemins.
 - Limiter les exercices numériques à 1-3, avec une option 4 quand l’enfant est prêt.
 - Proposer des activités de tri, d’appariement, de couleurs, de formes et de vocabulaire illustré.
+- L’alphabet chanté peut être proposé comme comptine de découverte, sans demander à l’enfant de connaître ou de nommer toutes les lettres.
 - Ne pas présenter une activité de déchiffrage comme un attendu de PS.
 
 ## Moyenne section — à partir de 4 ans
@@ -112,6 +113,7 @@ Les vitesses sont des cibles de travail sur des textes adaptés. Elles ne doiven
 - Tracer les lettres capitales.
 - Copier son prénom et des mots familiers en capitales.
 - S’initier aux tracés de l’écriture cursive.
+- Participer, sous la direction de l’adulte, à de premiers essais d’écriture et d’encodage de mots transparents.
 
 **Mathématiques**
 
@@ -129,6 +131,8 @@ Les vitesses sont des cibles de travail sur des textes adaptés. Elles ne doiven
 - Proposer séparément le nom des lettres et leur son.
 - Autoriser l’alphabet dans l’ordre et en aléatoire, surtout en capitales.
 - Pour l’écriture, privilégier capitales, prénom et mots courts ; la cursive reste une initiation.
+- À partir du milieu ou de la fin d’année, proposer un encodage très guidé : retrouver la lettre d’un son connu, compléter une syllabe simple ou tenter l’écriture d’un mot transparent avec l’adulte.
+- Ne pas présenter ce premier encodage dirigé comme une maîtrise autonome de la lecture ou de l’orthographe.
 - Limiter par défaut les collections et calculs imagés à 6, la suite orale pouvant aller jusqu’à 12.
 
 ## Grande section — à partir de 5 ans
@@ -170,6 +174,7 @@ Les vitesses sont des cibles de travail sur des textes adaptés. Elles ne doiven
 ### Conséquences pour Devoiro
 
 - Proposer conscience phonologique, nom et son des lettres, encodage de syllabes et de mots transparents comme activités distinctes.
+- Proposer un décodage préparatoire de syllabes puis de mots strictement transparents, uniquement avec les correspondances graphème-phonème déjà travaillées.
 - Pour les premiers exercices de lecture, contrôler strictement les correspondances graphème-phonème déjà travaillées.
 - Générer des fiches cursives avec lettres, prénom, syllabes et mots transparents avant les phrases.
 - En mathématiques, proposer collections, décompositions, compléments, rangs, bande numérique et petits problèmes jusqu’à 10 par défaut.
@@ -453,4 +458,3 @@ type CurriculumSkill = {
 - Ajouter, pour le cycle 3 : langue vivante, arts, EPS, EMC, histoire-géographie, sciences et technologie.
 - Vérifier à chaque rentrée les nouveaux Bulletins officiels et conserver la date et la version de chaque source.
 - Faire relire les règles de génération et des échantillons de fiches par des professeurs des écoles avant de présenter les niveaux comme pédagogiquement calibrés.
-

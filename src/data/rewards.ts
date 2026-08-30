@@ -19,10 +19,15 @@ export const DEFAULT_REWARDS: Reward[] = [
 ];
 
 const WEIGHTS = { commune: 6, peu_commune: 3, rare: 1 } as const;
+const MAX_RARE_BONUS = 6;
 
-export function drawReward(rewards: Reward[]) {
+export function drawReward(rewards: Reward[], randomValue = Math.random(), superBravoCount = 0) {
   const enabled = rewards.filter((reward) => reward.enabled);
   if (!enabled.length) return null;
-  const weighted = enabled.flatMap((reward) => Array.from({ length: WEIGHTS[reward.rarity] }, () => reward));
-  return weighted[Math.floor(Math.random() * weighted.length)];
+  const rareBonus = Math.min(Math.max(0, superBravoCount), MAX_RARE_BONUS);
+  const weighted = enabled.flatMap((reward) => {
+    const weight = WEIGHTS[reward.rarity] + (reward.rarity === "rare" ? rareBonus : 0);
+    return Array.from({ length: weight }, () => reward);
+  });
+  return weighted[Math.floor(randomValue * weighted.length) % weighted.length];
 }

@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState, type CSSProperties, type ReactNode } from "react";
 import { generatedWriting } from "../data/writing";
+import { drawReward } from "../data/rewards";
 import type { ActivityLevel, Profile } from "../types";
 import { BackButton } from "./Shell";
+import { WorksheetRewardQr } from "./WorksheetRewardQr";
 
 export type SectionLevel = "PS" | "MS" | "GS";
 export type PatternId = "verticals" | "horizontals" | "zigzags" | "circles" | "arches" | "cups" | "waves" | "bridges" | "loops" | "squares" | "triangles" | "spirals" | "crosses";
@@ -185,13 +187,14 @@ function DiscoveryBlock({ block, number }: { block: Extract<WorksheetBlock, { ty
   return <section className="composed-block composed-discovery-block"><div className="exercise-label">Exercice {number}</div><strong>Entoure le {selectSmallest ? "plus petit" : "plus grand"}.</strong><div className="shape-choice-row size-comparison-row">{sizes.map((size, index) => <ShapeSymbol shape="circle" size={size} key={`${size}-${index}`} />)}</div></section>;
 }
 
-function paginate(blocks: WorksheetBlock[]) {
+function paginate(blocks: WorksheetBlock[], reserveRewardSpace = false) {
   const pages: WorksheetBlock[][] = [];
   let page: WorksheetBlock[] = [];
   let used = 0;
+  const pageCapacity = reserveRewardSpace ? PAGE_CAPACITY - 24 : PAGE_CAPACITY;
   blocks.forEach((block) => {
     const cost = block.type === "writing" ? WRITING_COST : block.type === "discovery" ? DISCOVERY_COST : GRAPHISM_COST[block.size];
-    if (page.length && used + cost > PAGE_CAPACITY) {
+    if (page.length && used + cost > pageCapacity) {
       pages.push(page);
       page = [];
       used = 0;
@@ -240,11 +243,18 @@ export function WorksheetComposer({ profile, onBack, mode }: WorksheetComposerPr
   const [presetLevel, setPresetLevel] = useState<ActivityLevel>("ps");
   const [addingExercise, setAddingExercise] = useState(false);
   const [choosingPreset, setChoosingPreset] = useState(false);
+  const [rewardsEnabled, setRewardsEnabled] = useState(false);
+  const [rewardSeed, setRewardSeed] = useState(() => Math.random() * 10_000);
   const [blocks, setBlocks] = useState<WorksheetBlock[]>(() => graphismOnly
     ? PATTERNS.filter((pattern) => pattern.levels.includes("MS")).slice(0, 6).map((pattern) => graphismBlock("ms", pattern.id))
     : [{ id: makeId(), type: "writing", text: generatedWriting(profileForLevel(profile, "cp"), "phrase"), style: "script", level: "cp" }]);
-  const pages = useMemo(() => paginate(blocks), [blocks]);
+  const pages = useMemo(() => paginate(blocks, rewardsEnabled), [blocks, rewardsEnabled]);
+  const pageRewards = useMemo(() => pages.map((_, index) => {
+    const seededRandom = Math.abs(Math.sin(rewardSeed + index * 9301)) % 1;
+    return drawReward(profile.rewards, seededRandom);
+  }), [pages, profile.rewards, rewardSeed]);
   const availablePatterns = graphismOnly ? PATTERNS.filter((pattern) => pattern.levels.includes(level)) : patternsForLevel(catalogLevel);
+  const enabledRewardCount = profile.rewards.filter((reward) => reward.enabled).length;
 
   useEffect(() => {
     if (!addingExercise && !choosingPreset) return;
@@ -300,6 +310,7 @@ export function WorksheetComposer({ profile, onBack, mode }: WorksheetComposerPr
     <div className="writing-toolbar"><BackButton onClick={onBack} /><br /><span className="eyebrow">{graphismOnly ? "Maternelle · Graphisme" : "Fiche à composer"}</span><h1>Composer une fiche</h1><p>Ajoutez et ordonnez les exercices. Une nouvelle page est créée automatiquement si nécessaire.</p>
       <div className="writing-options"><label><span>Prénom sur la fiche</span><input type="text" value={studentName} maxLength={30} placeholder="Prénom de l’enfant" onChange={(event) => setStudentName(event.target.value)} /></label><label><span>Date de la fiche</span><input type="date" value={date} onChange={(event) => setDate(event.target.value)} /></label>
         {graphismOnly && <div className="field"><span>Niveau indicatif</span><div className="segmented">{(["PS", "MS", "GS"] as SectionLevel[]).map((item) => <button className={level === item ? "active" : ""} key={item} onClick={() => chooseLevel(item)}>{item}</button>)}</div></div>}
+        <label className="worksheet-reward-toggle"><span><b>QR code récompense</b><small>Une récompense différente par feuille, à scanner par un adulte.</small></span><input type="checkbox" checked={rewardsEnabled} disabled={!enabledRewardCount} onChange={(event) => { setRewardsEnabled(event.target.checked); if (event.target.checked) setRewardSeed(Math.random() * 10_000); }} /></label>{!enabledRewardCount && <small className="worksheet-reward-warning">Activez d’abord une récompense depuis l’accueil.</small>}
       </div>
       <button className="open-preset-catalog" onClick={() => setChoosingPreset(true)}><span>Fiches prêtes à l’emploi</span><strong>Choisir un modèle par niveau →</strong></button>
       <div className="exercise-block-list">{blocks.map((block, index) => <article className={`exercise-block-editor ${block.type}`} key={block.id}><header><div><small>Exercice {index + 1} · {block.level.toUpperCase()}</small><strong>{blockTitle(block)}</strong></div><div><button disabled={index === 0} onClick={() => moveBlock(index, -1)} aria-label="Monter l’exercice">↑</button><button disabled={index === blocks.length - 1} onClick={() => moveBlock(index, 1)} aria-label="Descendre l’exercice">↓</button><button onClick={() => removeBlock(block.id)} aria-label="Retirer l’exercice">✕</button></div></header>
@@ -309,12 +320,12 @@ export function WorksheetComposer({ profile, onBack, mode }: WorksheetComposerPr
       </article>)}</div><button className="open-exercise-catalog" onClick={() => setAddingExercise(true)}>+ Ajouter un exercice</button>
       <div className="page-count">{pages.length} page{pages.length > 1 ? "s" : ""} A4</div><button className="primary-button print-button" disabled={blocks.length === 0} onClick={() => window.print()}>Imprimer la fiche</button><small className="print-tip">A4 · échelle 100 % · arrière-plans activés</small>
     </div>
-    <div className="worksheet-preview composed-preview">{pages.map((page, pageIndex) => <div className="preview-page" key={pageIndex}><div className="preview-label">Aperçu A4 · page {pageIndex + 1}/{pages.length}</div><article className="a4-sheet composed-sheet"><SheetHeader studentName={studentName} date={date} label={graphismOnly ? `GRAPHISME · ${level}` : "FICHE D’ACTIVITÉS"} /><div className="composed-exercises">{page.map((block) => {
+    <div className="worksheet-preview composed-preview">{pages.map((page, pageIndex) => <div className="preview-page" key={pageIndex}><div className="preview-label">Aperçu A4 · page {pageIndex + 1}/{pages.length}</div><article className={`a4-sheet composed-sheet ${rewardsEnabled ? "has-reward-qr" : ""}`}><SheetHeader studentName={studentName} date={date} label={graphismOnly ? `GRAPHISME · ${level}` : "FICHE D’ACTIVITÉS"} /><div className="composed-exercises">{page.map((block) => {
         const number = blocks.findIndex((item) => item.id === block.id) + 1;
         if (block.type === "writing") return <WritingBlock block={block} number={number} key={block.id} />;
         if (block.type === "graphism") return <GraphismBlock block={block} number={number} key={block.id} />;
         return <DiscoveryBlock block={block} number={number} key={block.id} />;
-      })}</div>{page.length === 0 && <div className="empty-sheet">Ajoutez un premier exercice.</div>}<footer>Je prends mon temps et je m’applique.</footer></article></div>)}</div>
+      })}</div>{page.length === 0 && <div className="empty-sheet">Ajoutez un premier exercice.</div>}<WorksheetRewardQr reward={rewardsEnabled ? pageRewards[pageIndex] || null : null} /><footer>Je prends mon temps et je m’applique.</footer></article></div>)}</div>
     {choosingPreset && <div className="exercise-catalog-backdrop" onMouseDown={() => setChoosingPreset(false)}>
       <div className="exercise-catalog preset-catalog" role="dialog" aria-modal="true" aria-labelledby="preset-catalog-title" onMouseDown={(event) => event.stopPropagation()}>
         <header><div><small>Fiches prêtes à l’emploi</small><strong id="preset-catalog-title">Choisir un modèle</strong></div><button onClick={() => setChoosingPreset(false)} aria-label="Fermer">✕</button></header>

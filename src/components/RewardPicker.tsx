@@ -16,7 +16,7 @@ export function RewardPicker({ rewards, onChange }: { rewards: Reward[]; onChang
   return <div className="reward-picker">
     <div className="section-heading"><div><strong>Récompenses possibles</strong><small>Activez les surprises qui vous conviennent.</small></div><span>{rewards.filter((reward) => reward.enabled).length} actives</span></div>
     <div className="reward-grid">
-      {rewards.map((reward) => <button key={reward.id} className={reward.enabled ? "enabled" : ""} onClick={() => toggle(reward.id)} type="button">
+      {rewards.map((reward) => <button key={reward.id} className={reward.enabled ? "enabled" : ""} aria-pressed={reward.enabled} onClick={() => toggle(reward.id)} type="button">
         <span className={`reward-rarity-dot ${reward.rarity}`} aria-hidden="true" /><strong>{reward.label}</strong><small>{RARITY_LABELS[reward.rarity]}{reward.enabled ? " · Activée" : ""}</small>
       </button>)}
     </div>

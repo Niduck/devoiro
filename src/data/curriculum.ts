@@ -1,4 +1,4 @@
-import type { DailyStep, Profile, ReadingItem, ReadingLevel } from "../types";
+import type { ActivityLevel, DailyJourneyStep, Profile, ReadingItem, ReadingLevel } from "../types";
 
 const word = (text: string, syllables: string): ReadingItem => ({ text, syllables: syllables.split("-"), kind: "word" });
 const phrase = (text: string): ReadingItem => ({ text, kind: "phrase" });
@@ -82,19 +82,52 @@ export const CONTENT: Record<ReadingLevel, ReadingItem[]> = {
   ],
 };
 
-export function dailySteps(profile: Profile): DailyStep[] {
-  const count = profile.schoolLevel === "maternelle" ? 3 : profile.schoolLevel === "cp" && profile.period !== "fin" ? 4 : 5;
-  const wordSteps: DailyStep[] = [
-    { title: "Échauffement", instruction: "Lis quelques mots familiers.", level: "facile", target: 3, seconds: 50 },
-    { title: "Exploration", instruction: "Lis les mots sans te presser.", level: "facile", target: 4, seconds: 60 },
-    { title: "Sons malins", instruction: "Repère les sons complexes.", level: "moyen", target: 4, seconds: 70 },
-  ];
-  const wordChallenge: DailyStep = { title: "Défi des mots", instruction: "Lis ces derniers mots avec assurance !", level: "moyen", target: 3, seconds: 70 };
-  const phrases: DailyStep = { title: "Petites phrases", instruction: "Termine le parcours avec des phrases complètes.", level: "difficile", target: 2, seconds: 80 };
+export function dailyJourney(profile: Profile, activityLevel?: ActivityLevel): DailyJourneyStep[] {
+  if (activityLevel === "ps") {
+    return shuffleJourneySteps([
+      { activity: "colors", title: "Le jeu des couleurs", instruction: "Reconnaître et nommer des couleurs." },
+      { activity: "shapes", title: "Le jeu des formes", instruction: "Reconnaître et nommer des formes simples." },
+      { activity: "alphabet-song", title: "L’alphabet en chanson", instruction: "Découvrir les lettres en chantant, sans objectif de mémorisation." },
+    ]).slice(0, 2);
+  }
 
-  if (count === 3) return wordSteps;
-  if (count === 4) return [...wordSteps, phrases];
-  return [...wordSteps, wordChallenge, phrases];
+  if (activityLevel === "ms") {
+    const steps: DailyJourneyStep[] = [
+      { activity: "colors", title: "Le jeu des couleurs", instruction: "Réviser les couleurs à voix haute." },
+      { activity: "shapes", title: "Le jeu des formes", instruction: "Nommer les formes qui apparaissent." },
+      { activity: "alphabet-song", title: "L’alphabet en chanson", instruction: "Suivre les lettres dans l’ordre." },
+    ];
+    if (profile.period !== "debut") steps.push({ activity: "letter-name", title: "Le nom des lettres", instruction: "Reconnaître quelques lettres dans le désordre." });
+    if (profile.period !== "debut") steps.push({ activity: "encoding", title: "J’encode", instruction: "Écouter puis retrouver l’écriture d’un son simple." });
+    if (profile.period === "fin") steps.push({ activity: "decoding", title: "Je décode", instruction: "Découvrir la fusion de quelques sons simples." });
+    return shuffleJourneySteps(steps).slice(0, 3);
+  }
+
+  if (activityLevel === "gs") {
+    const steps: DailyJourneyStep[] = [
+      { activity: "letter-name", title: "Le nom des lettres", instruction: "Reconnaître les lettres dans le désordre." },
+      { activity: "alphabet-song", title: "L’alphabet en chanson", instruction: "Suivre les lettres dans l’ordre." },
+    ];
+    if (profile.period !== "debut") steps.push({ activity: "letter-sound", title: "Le son des lettres", instruction: "Dire le son le plus courant de chaque lettre." });
+    steps.push({ activity: "encoding", title: "J’encode", instruction: "Écouter puis retrouver l’écriture d’une syllabe ou d’un mot transparent." });
+    steps.push({ activity: "decoding", title: "Je décode", instruction: "Lire des syllabes puis des mots transparents." });
+    return shuffleJourneySteps(steps).slice(0, 3);
+  }
+
+  return [
+    { activity: "reading", title: "Mots familiers", instruction: "Commencer par des mots courts et connus.", level: "facile", target: 4, seconds: 60 },
+    { activity: "reading", title: "Mots plus longs", instruction: "Continuer avec plusieurs syllabes et des sons complexes.", level: "moyen", target: 4, seconds: 70 },
+    { activity: "reading", title: "Petites phrases", instruction: "Terminer avec des phrases complètes.", level: "difficile", target: 2, seconds: 80 },
+  ];
+}
+
+function shuffleJourneySteps(steps: DailyJourneyStep[]) {
+  const result = [...steps];
+  for (let index = result.length - 1; index > 0; index -= 1) {
+    const other = Math.floor(Math.random() * (index + 1));
+    [result[index], result[other]] = [result[other], result[index]];
+  }
+  return result;
 }
 
 export function shuffleItems(items: ReadingItem[]) {

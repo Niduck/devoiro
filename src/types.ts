@@ -43,6 +43,10 @@ export type DailyStep = {
   seconds: number;
 };
 
+export type DailyJourneyStep =
+  | (DailyStep & { activity: "reading" })
+  | { activity: "colors" | "shapes" | "letter-name" | "letter-sound" | "alphabet-song" | "decoding" | "encoding"; title: string; instruction: string };
+
 export type AppData = {
   version: 1;
   profiles: Profile[];
