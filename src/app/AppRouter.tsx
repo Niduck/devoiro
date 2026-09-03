@@ -42,6 +42,16 @@ function activityProfile(level: ActivityLevel, period: SchoolPeriod, rewards: Re
   };
 }
 
+function recommendedReadingAids(level: ActivityLevel, period: SchoolPeriod, font: ReadingAids["font"]): ReadingAids {
+  const needsSoundBySoundHelp = (level === "gs" || level === "cp") && period === "debut";
+  return {
+    segmentation: needsSoundBySoundHelp ? "guided" : "syllables",
+    complexSounds: true,
+    silentLetters: true,
+    font,
+  };
+}
+
 export function AppRouter() {
   const navigate = useNavigate();
   const [level, setLevel] = useState<ActivityLevel>("cp");
@@ -51,7 +61,7 @@ export function AppRouter() {
   const period = periodMode === "auto" ? automaticPeriod : periodMode;
   const profile = useMemo(() => activityProfile(level, period, rewards), [level, period, rewards]);
   const dailyPlan = useMemo(() => dailyJourney(profile, level), [level, profile]);
-  const [aids, setAids] = useState<ReadingAids>({ syllables: false, complexSounds: false, font: "nunito" });
+  const [aids, setAids] = useState<ReadingAids>({ segmentation: "none", complexSounds: false, silentLetters: false, font: "nunito" });
   const [session, setSession] = useState<SessionDefinition | null>(null);
   const [dailyIndex, setDailyIndex] = useState(0);
   const [lastResult, setLastResult] = useState<SessionResult | null>(null);
@@ -104,6 +114,17 @@ export function AppRouter() {
     setReward(null);
     setDailyRunning(true);
     prepareDailyStep(0);
+  };
+
+  const openDailyOverview = () => {
+    const noAidIsActive = aids.segmentation === "none" && !aids.complexSounds && !aids.silentLetters;
+    if (level === "gs" && noAidIsActive) setAids(recommendedReadingAids(level, period, aids.font));
+    navigate(routes.dailyOverview);
+  };
+
+  const retryDailyWithAids = () => {
+    setAids(recommendedReadingAids(level, period, aids.font));
+    navigate(routes.instruction);
   };
 
   const completeSession = (result: SessionResult) => {
@@ -163,7 +184,7 @@ export function AppRouter() {
       onLevelChange={setLevel}
       onPeriodModeChange={setPeriodMode}
       onBack={() => navigate(routes.workspace)}
-      onDaily={() => navigate(routes.dailyOverview)}
+      onDaily={openDailyOverview}
       onReading={() => navigate(routes.reading)}
       onColors={() => navigate(routes.colors)}
       onShapes={() => navigate(routes.shapes)}
@@ -181,17 +202,17 @@ export function AppRouter() {
     <Route path={ROUTE_PATTERNS.letterNames} element={<KindergartenOralActivity key={`letters-${dailyIndex}-${dailyRunning}`} profile={profile} kind="letter-name" onBack={dailyRunning ? leaveDaily : () => navigate(routes.activities)} onComplete={dailyRunning && activeDailyStep?.activity === "letter-name" ? completeDailyActivity : undefined} />} />
     <Route path={ROUTE_PATTERNS.alphabetSong} element={<AlphabetSongActivity key={`song-${dailyIndex}-${dailyRunning}`} profile={profile} onBack={dailyRunning ? leaveDaily : () => navigate(routes.activities)} onComplete={dailyRunning && activeDailyStep?.activity === "alphabet-song" ? completeDailyActivity : undefined} />} />
     <Route path={ROUTE_PATTERNS.letterSounds} element={<KindergartenOralActivity key={`sounds-${dailyIndex}-${dailyRunning}`} profile={profile} kind="letter-sound" onBack={dailyRunning ? leaveDaily : () => navigate(routes.activities)} onComplete={dailyRunning && activeDailyStep?.activity === "letter-sound" ? completeDailyActivity : undefined} />} />
-    <Route path={ROUTE_PATTERNS.decoding} element={<DecodingActivity key={`decoding-${dailyIndex}-${dailyRunning}`} profile={profile} level={level} period={period} onBack={dailyRunning ? leaveDaily : () => navigate(routes.activities)} onComplete={dailyRunning && activeDailyStep?.activity === "decoding" ? completeDailyActivity : undefined} />} />
+    <Route path={ROUTE_PATTERNS.decoding} element={<DecodingActivity key={`decoding-${dailyIndex}-${dailyRunning}`} profile={profile} level={level} period={period} aids={aids} onAidsChange={setAids} onBack={dailyRunning ? leaveDaily : () => navigate(routes.activities)} onComplete={dailyRunning && activeDailyStep?.activity === "decoding" ? completeDailyActivity : undefined} />} />
     <Route path={ROUTE_PATTERNS.encoding} element={<EncodingActivity key={`encoding-${dailyIndex}-${dailyRunning}`} profile={profile} level={level} period={period} onBack={dailyRunning ? leaveDaily : () => navigate(routes.activities)} onComplete={dailyRunning && activeDailyStep?.activity === "encoding" ? completeDailyActivity : undefined} />} />
 
     <Route path={ROUTE_PATTERNS.composer} element={<WorksheetComposer profile={profile} onBack={() => navigate(routes.worksheets)} mode="writing" />} />
     <Route path={ROUTE_PATTERNS.alphabetWorksheet} element={<AlphabetWorksheetScreen profile={profile} onBack={() => navigate(routes.worksheets)} />} />
 
     <Route path={ROUTE_PATTERNS.punctualSetup} element={<WithShell><PunctualSetup aids={aids} onAidsChange={setAids} onBack={() => navigate(routes.reading)} onStart={startPunctual} /></WithShell>} />
-    <Route path={ROUTE_PATTERNS.dailyOverview} element={<WithShell><DailyOverview profile={profile} steps={dailyPlan} onBack={leaveDaily} onStart={startDaily} /></WithShell>} />
+    <Route path={ROUTE_PATTERNS.dailyOverview} element={<WithShell><DailyOverview profile={profile} steps={dailyPlan} aids={aids} onAidsChange={setAids} onBack={leaveDaily} onStart={startDaily} /></WithShell>} />
     <Route path={ROUTE_PATTERNS.instruction} element={session ? <WithShell><ParentInstruction profile={profile} session={session} onBack={() => navigate(session.kind === "quotidien" ? routes.dailyOverview : routes.punctualSetup)} onBegin={() => navigate(routes.session)} /></WithShell> : sessionFallback} />
     <Route path={ROUTE_PATTERNS.session} element={session ? <ReadingSession profile={profile} session={session} aids={aids} onAidsChange={setAids} onExit={() => navigate(session.kind === "quotidien" ? routes.dailyOverview : routes.reading)} onComplete={completeSession} /> : sessionFallback} />
-    <Route path={ROUTE_PATTERNS.stepResult} element={session && lastResult ? <WithShell><DailyStepResult profile={profile} session={session} result={lastResult} aids={aids} onAidsChange={setAids} onRetry={() => navigate(routes.instruction)} onNext={nextDailyStep} onStop={leaveDaily} /></WithShell> : sessionFallback} />
+    <Route path={ROUTE_PATTERNS.stepResult} element={session && lastResult ? <WithShell><DailyStepResult profile={profile} session={session} result={lastResult} aids={aids} onAidsChange={setAids} onRetry={retryDailyWithAids} onNext={nextDailyStep} onStop={leaveDaily} /></WithShell> : sessionFallback} />
     <Route path={ROUTE_PATTERNS.reward} element={session || dailyRunning ? <WithShell><FinalReward profile={profile} reward={dailyRunning || session?.kind === "quotidien" ? reward : null} totalScore={totalScore} superBravoCount={totalSuperBravo} showGift={dailyRunning || session?.kind === "quotidien"} onDone={finishFlow} /></WithShell> : sessionFallback} />
 
     <Route path="*" element={<Navigate to={routes.landing} replace />} />

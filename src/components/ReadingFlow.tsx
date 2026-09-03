@@ -107,17 +107,18 @@ export function ReadingSession({ profile, session, aids, onAidsChange, onExit, o
   }, [finish, session.timed]);
 
   const item = items[index];
+  const activeAidCount = Number(aids.segmentation !== "none") + Number(aids.complexSounds) + Number(aids.silentLetters);
   return <section className="session-page">
     <header className="session-header"><button onClick={onExit}>✕</button>{session.kind === "quotidien" ? <JourneyProgress profile={profile} current={session.stepIndex || 0} count={session.stepCount || 1} /> : <strong>Lecture libre</strong>}<div className="session-stats"><span>Score {score}</span>{session.timed && <span className={remaining <= 10 ? "urgent" : ""}>{remaining}s</span>}</div></header>
     <main className="reading-stage"><div className="level-chip">{session.level === "difficile" ? "Petite phrase" : "Lis à voix haute"}</div><ReadingText item={item} aids={aids} readWords={readWords} />
-      {aids.syllables && item.kind === "phrase" && <small className="auto-aid-note">Le découpage en syllabes se désactive pour les phrases.</small>}
+      {aids.segmentation !== "none" && item.kind === "phrase" && <small className="auto-aid-note">Le découpage se désactive pour les phrases afin de garder une lecture fluide.</small>}
       <div className="listening-state"><span className="pulse-dot" />{speech.supported ? (speech.problem ? "Le micro a besoin d’être relancé" : "Je t’écoute…") : "Reconnaissance vocale indisponible"}</div>
       <button className="manual-button" onClick={() => next(true)}>✓ Valider ce mot</button>
       {!session.timed && <button className="finish-button" onClick={() => finish(scoreRef.current, true)}>Terminer la partie</button>}
     </main>
     <div className="session-help">
       {helpOpen && <aside className="session-help-menu"><button className="close-help" onClick={() => setHelpOpen(false)} aria-label="Fermer les aides">✕</button><AidControls aids={aids} onChange={onAidsChange} /></aside>}
-      <button className="help-fab" aria-expanded={helpOpen} onClick={() => setHelpOpen((open) => !open)}>Aides{(aids.syllables || aids.complexSounds) && <i>•</i>}</button>
+      <button className={activeAidCount ? "help-fab active" : "help-fab"} aria-expanded={helpOpen} onClick={() => setHelpOpen((open) => !open)}><span>Aa</span><span><strong>Aides de lecture</strong><small>{activeAidCount ? `${activeAidCount} active${activeAidCount > 1 ? "s" : ""}` : "Afficher les aides"}</small></span></button>
     </div>
     {speech.heard && <div className="speech-toast"><small>J’ai entendu</small><strong>« {speech.heard} »</strong></div>}
     {celebration && <div className={celebration.includes("Super") ? "celebration super" : "celebration"}><span>{celebration}</span><i>+1 étoile</i></div>}
@@ -129,7 +130,7 @@ export function DailyStepResult({ profile, session, result, aids, onAidsChange, 
   return <section className="page result-page"><JourneyProgress profile={profile} current={(session.stepIndex || 0) + (result.success ? 1 : 0)} count={session.stepCount || 1} />
     <div className="result-card"><DevoirosAvatar id={profile.devoiros} className="result-devoiros" /><h1>{result.success ? "Étape réussie !" : "On réessaie tranquillement"}</h1><p>{result.score} lecture{result.score > 1 ? "s" : ""} validée{result.score > 1 ? "s" : ""}{result.superCount ? ` · ${result.superCount} super bravo` : ""}</p>
       {!result.success && <div className="parent-help"><strong>Conseil pour l’adulte</strong><p>Après une étape difficile, les aides à la lecture peuvent débloquer l’enfant sans donner la réponse.</p><AidControls aids={aids} onChange={onAidsChange} /></div>}
-      <div className="result-actions">{!result.success && <button className="secondary-button" onClick={onRetry}>Réessayer avec ces aides</button>}<button className="primary-button" onClick={onNext}>{result.success ? "Étape suivante →" : "Continuer quand même →"}</button><button className="text-button" onClick={onStop}>Arrêter pour aujourd’hui</button></div>
+      <div className="result-actions">{!result.success && <button className="secondary-button" onClick={onRetry}>Réessayer avec les aides recommandées</button>}<button className="primary-button" onClick={onNext}>{result.success ? "Étape suivante →" : "Continuer quand même →"}</button><button className="text-button" onClick={onStop}>Arrêter pour aujourd’hui</button></div>
     </div>
   </section>;
 }

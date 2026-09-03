@@ -135,5 +135,79 @@ p { line-height:1.55; }
 @media(max-width:620px){.daily-activity-button{grid-template-columns:48px 1fr;padding:16px}.daily-activity-button>.gift-mark{width:46px;height:46px}.daily-activity-button>b{grid-column:2}.song-finish{flex-wrap:wrap;justify-content:center;text-align:center}.song-finish .primary-button{width:100%;margin-left:0}}
 @media(max-width:520px){.activity-period-tabs{overflow:auto}.activity-period-tabs button{min-width:76px}}
 
+/* Aides de lecture progressives */
+.aid-mode-picker{
+  display:grid;
+  grid-template-columns:repeat(2,1fr);
+  gap:7px;
+  margin:10px 0 14px;
+  padding:5px;
+  border-radius:15px;
+  background:#f1f5f9;
+}
+.aid-mode-picker button{
+  border:1px solid transparent;
+  border-radius:11px;
+  background:transparent;
+  padding:9px 6px;
+  color:#64748b;
+  cursor:pointer;
+}
+.aid-mode-picker button strong,.aid-mode-picker button small{display:block}
+.aid-mode-picker button small{margin-top:2px;font-size:10px;color:#8994a5}
+.aid-mode-picker button.selected{border-color:#bfdbfe;background:#fff;color:#1d4ed8;box-shadow:0 4px 12px #17255412}
+.reading-unit.complex{color:#e34f76}
+.reading-unit.silent{color:#aeb7c5}
+.segmented-view>div{display:flex;justify-content:center;flex-wrap:wrap}
+.segmented-view i{padding:0 .08em;color:#aeb7c5;font-style:normal}
+.segmented-view>small{display:block;margin-top:12px;color:#7f8a9a;font-family:inherit;font-size:32px;font-weight:500}
+.daily-aids-card{
+  display:grid;
+  grid-template-columns:minmax(220px,.8fr) minmax(430px,1.2fr);
+  align-items:center;
+  gap:28px;
+  margin:28px auto 0;
+  padding:24px;
+  border:2px solid #bfdbfe;
+  border-radius:25px;
+  background:#f8fbff;
+}
+.daily-aids-card h2{margin:5px 0;font-size:28px}
+.daily-aids-card p{margin:0;color:#68758a}
+.daily-aids-card .aid-controls{margin:0;box-shadow:none}
+.help-fab{
+  display:flex;
+  align-items:center;
+  gap:11px;
+  border:2px solid #93c5fd;
+  border-radius:19px;
+  background:#1d4ed8;
+  padding:10px 15px 10px 10px;
+  color:#fff;
+  text-align:left;
+  box-shadow:0 12px 32px #1d4ed840;
+}
+.help-fab>span:first-child{display:grid;place-items:center;width:40px;height:40px;border-radius:12px;background:#fff;color:#1d4ed8;font:900 17px "Nunito"}
+.help-fab strong,.help-fab small{display:block}
+.help-fab small{margin-top:1px;color:#dbeafe;font-size:11px}
+.help-fab.active{border-color:#fbbf24;background:#172554;box-shadow:0 0 0 4px #fef3c7,0 12px 32px #17255438}
+.session-help-menu{bottom:72px;width:340px}
+.session-help-menu .aid-controls>div{padding-right:0}
+.session-help-menu .aid-controls>div:first-child{padding-right:34px}
+.session-help-menu .aid-mode-picker small{display:block}
+.decoding-target .reading-word{margin:0;font:inherit;line-height:1.15}
+.decoding-target .reading-word>small{font-size:.28em;line-height:1.2}
+
+@media(max-width:780px){
+  .daily-aids-card{grid-template-columns:1fr;padding:18px}
+  .help-fab{padding:8px 11px 8px 8px}
+  .help-fab>span:first-child{width:36px;height:36px}
+}
+@media(max-width:430px){
+  .aid-mode-picker{grid-template-columns:1fr}
+  .aid-mode-picker button{display:flex;align-items:center;justify-content:space-between;padding:8px 10px}
+  .aid-mode-picker button small{margin:0}
+}
+
 @page{size:A4 portrait;margin:0}
 @media print{@page{size:A4;margin:0}body{background:#fff}.app-shell,.writing-toolbar,.preview-label{display:none!important}.writing-page{display:block;min-height:0;padding:0;background:#fff}.worksheet-preview{display:block;padding:0;overflow:visible}.preview-page{width:210mm;margin:0;break-after:page;page-break-after:always}.preview-page:last-child{break-after:auto;page-break-after:auto}.a4-sheet{position:relative;inset:auto;margin:0;box-shadow:none;width:210mm;height:297mm}.worksheet-preview>.a4-sheet{break-after:auto;page-break-after:auto}}

@@ -3,15 +3,26 @@ import activityLetters from "../assets/illustrations/devoiros/activity-nom-des-l
 import activityWriting from "../assets/illustrations/devoiros/activity-ecriture.svg";
 import { useSpeechRecognition } from "../hooks/useSpeechRecognition";
 import { normalize } from "../lib/reading";
-import type { ActivityLevel, Profile, SchoolPeriod } from "../types";
+import type { ActivityLevel, Profile, ReadingAids, SchoolPeriod } from "../types";
+import { AidControls } from "./ReadingSetup";
+import { AssistedWord } from "./ReadingText";
 import { BackButton } from "./Shell";
 import { DevoirosAvatar } from "./DevoirosAvatar";
 
-type DecodingItem = { text: string; aliases: string[] };
+type DecodingItem = { text: string; aliases: string[]; syllables: string[] };
 type EncodingItem = { spoken: string; answer: string; choices: string[] };
 
-const SYLLABLES: DecodingItem[] = ["ma", "mi", "mo", "la", "li", "lu", "sa", "si", "fa", "fi", "va", "ri"].map((text) => ({ text, aliases: [text] }));
-const TRANSPARENT_WORDS: DecodingItem[] = ["moto", "lama", "vélo", "salade", "farine", "domino", "pirate", "lavabo"].map((text) => ({ text, aliases: [text] }));
+const SYLLABLES: DecodingItem[] = ["ma", "mi", "mo", "la", "li", "lu", "sa", "si", "fa", "fi", "va", "ri"].map((text) => ({ text, aliases: [text], syllables: [text] }));
+const TRANSPARENT_WORDS: DecodingItem[] = [
+  { text: "moto", syllables: ["mo", "to"] },
+  { text: "lama", syllables: ["la", "ma"] },
+  { text: "vélo", syllables: ["vé", "lo"] },
+  { text: "salade", syllables: ["sa", "la", "de"] },
+  { text: "farine", syllables: ["fa", "ri", "ne"] },
+  { text: "domino", syllables: ["do", "mi", "no"] },
+  { text: "pirate", syllables: ["pi", "ra", "te"] },
+  { text: "lavabo", syllables: ["la", "va", "bo"] },
+].map((item) => ({ ...item, aliases: [item.text] }));
 
 const MS_ENCODING: EncodingItem[] = [
   { spoken: "a", answer: "A", choices: ["A", "I", "O"] },
@@ -43,13 +54,14 @@ function completedScreen(profile: Profile, score: number, onBack: () => void, on
   return <section className="page kindergarten-finish"><DevoirosAvatar id={profile.devoiros} /><h1>Bravo !</h1><p>{score} réponse{score > 1 ? "s" : ""} réussie{score > 1 ? "s" : ""}.</p><button className="primary-button" onClick={() => onComplete ? onComplete(score) : onBack()}>{onComplete ? "Étape suivante →" : "Retour aux activités"}</button></section>;
 }
 
-export function DecodingActivity({ profile, level, period, onBack, onComplete }: { profile: Profile; level: ActivityLevel; period: SchoolPeriod; onBack(): void; onComplete?(score: number): void }) {
+export function DecodingActivity({ profile, level, period, aids, onAidsChange, onBack, onComplete }: { profile: Profile; level: ActivityLevel; period: SchoolPeriod; aids: ReadingAids; onAidsChange(aids: ReadingAids): void; onBack(): void; onComplete?(score: number): void }) {
   const items = useMemo(() => shuffled(level === "gs" && period !== "debut" ? [...SYLLABLES, ...TRANSPARENT_WORDS] : SYLLABLES).slice(0, 8), [level, period]);
   const [started, setStarted] = useState(false);
   const [index, setIndex] = useState(0);
   const [score, setScore] = useState(0);
   const [finished, setFinished] = useState(false);
   const [celebration, setCelebration] = useState(false);
+  const [helpOpen, setHelpOpen] = useState(false);
   const itemRef = useRef(items[0]);
   const advancing = useRef(false);
   const speechResetRef = useRef<() => void>(() => undefined);
@@ -88,8 +100,8 @@ export function DecodingActivity({ profile, level, period, onBack, onComplete }:
   if (finished) return completedScreen(profile, score, onBack, onComplete);
 
   const useScript = level === "gs" && period !== "debut";
-  const displayedText = useScript ? items[index].text.toLocaleLowerCase("fr-FR") : items[index].text.toLocaleUpperCase("fr-FR");
-  return <section className="kindergarten-session phonics-session"><header><button onClick={onBack}>✕</button><strong>Je décode</strong><span>Score {score}/{items.length}</span></header><main><span className="kindergarten-level">{level.toUpperCase()} · {period === "debut" ? "début" : period === "milieu" ? "milieu" : "fin"} d’année · {useScript ? "script" : "capitales"}</span><div className={`decoding-target ${useScript ? "script" : "capitales"}`}>{displayedText}</div><div className="listening-state"><span className="pulse-dot" />{speech.supported ? (speech.problem ? "Le micro a besoin d’être relancé" : "Je t’écoute…") : "Reconnaissance vocale indisponible"}</div>{speech.problem && <button className="secondary-button speech-retry" onClick={startSpeech}>Relancer le micro</button>}<button className="manual-button" onClick={next}>✓ Valider la réponse</button></main>{speech.heard && <div className="speech-toast"><small>J’ai entendu</small><strong>« {speech.heard} »</strong></div>}{celebration && <div className="celebration"><span>Bravo !</span><i>On continue</i></div>}</section>;
+  const activeAidCount = Number(aids.segmentation !== "none") + Number(aids.complexSounds) + Number(aids.silentLetters);
+  return <section className="kindergarten-session phonics-session"><header><button onClick={onBack}>✕</button><strong>Je décode</strong><span>Score {score}/{items.length}</span></header><main><span className="kindergarten-level">{level.toUpperCase()} · {period === "debut" ? "début" : period === "milieu" ? "milieu" : "fin"} d’année · {useScript ? "script" : "capitales"}</span><div className={`decoding-target ${useScript ? "script" : "capitales"}`}><AssistedWord item={{ text: items[index].text, syllables: items[index].syllables, kind: "word" }} aids={aids} /></div><div className="listening-state"><span className="pulse-dot" />{speech.supported ? (speech.problem ? "Le micro a besoin d’être relancé" : "Je t’écoute…") : "Reconnaissance vocale indisponible"}</div>{speech.problem && <button className="secondary-button speech-retry" onClick={startSpeech}>Relancer le micro</button>}<button className="manual-button" onClick={next}>✓ Valider la réponse</button></main><div className="session-help">{helpOpen && <aside className="session-help-menu"><button className="close-help" onClick={() => setHelpOpen(false)} aria-label="Fermer les aides">✕</button><AidControls aids={aids} onChange={onAidsChange} /></aside>}<button className={activeAidCount ? "help-fab active" : "help-fab"} aria-expanded={helpOpen} onClick={() => setHelpOpen((open) => !open)}><span>Aa</span><span><strong>Aides de lecture</strong><small>{activeAidCount ? `${activeAidCount} active${activeAidCount > 1 ? "s" : ""}` : "Afficher les aides"}</small></span></button></div>{speech.heard && <div className="speech-toast"><small>J’ai entendu</small><strong>« {speech.heard} »</strong></div>}{celebration && <div className="celebration"><span>Bravo !</span><i>On continue</i></div>}</section>;
 }
 
 export function EncodingActivity({ profile, level, period, onBack, onComplete }: { profile: Profile; level: ActivityLevel; period: SchoolPeriod; onBack(): void; onComplete?(score: number): void }) {

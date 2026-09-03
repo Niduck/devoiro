@@ -26,12 +26,22 @@ export type Profile = {
 export type ReadingItem = {
   text: string;
   syllables?: string[];
+  graphemes?: ReadingAnnotatedUnit[];
+  guidedUnits?: ReadingAnnotatedUnit[];
+  silentEnding?: string;
   kind: "word" | "phrase";
 };
 
+export type ReadingAnnotatedUnit = {
+  text: string;
+  complex?: boolean;
+  silent?: boolean;
+};
+
 export type ReadingAids = {
-  syllables: boolean;
+  segmentation: "none" | "syllables" | "graphemes" | "guided";
   complexSounds: boolean;
+  silentLetters: boolean;
   font: "outfit" | "nunito" | "quicksand" | "marelle-baton" | "marelle";
 };
 

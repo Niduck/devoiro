@@ -34,4 +34,6 @@ Les variantes **Marelle** et **Marelle Bâton**, conçues avec le soutien de la 
 
 Le cadrage produit détaillé est dans [PRODUCT.md](./PRODUCT.md).
 
+Les référentiels pédagogiques et leur guide de lecture sont regroupés dans [`.docs/README.md`](./.docs/README.md).
+
 # devoiro

@@ -6,9 +6,15 @@ import { DevoirosAvatar } from "./DevoirosAvatar";
 
 export function AidControls({ aids, onChange }: { aids: ReadingAids; onChange(aids: ReadingAids): void }) {
   return <div className="aid-controls">
-    <div><strong>Aides à la lecture</strong><small>À activer si l’enfant en a besoin.</small></div>
-    <label className="switch-row"><span><b>Découper les syllabes</b><small>Le mot entier reste affiché dessous.</small></span><input type="checkbox" checked={aids.syllables} onChange={(event) => onChange({ ...aids, syllables: event.target.checked })} /></label>
+    <div><strong>Aides à la lecture</strong><small>Choisissez le niveau d’accompagnement.</small></div>
+    <div className="aid-mode-picker" role="group" aria-label="Niveau de découpage">
+      <button type="button" aria-pressed={aids.segmentation === "none"} className={aids.segmentation === "none" ? "selected" : ""} onClick={() => onChange({ ...aids, segmentation: "none" })}><strong>Mot entier</strong><small>Sans découpage</small></button>
+      <button type="button" aria-pressed={aids.segmentation === "syllables"} className={aids.segmentation === "syllables" ? "selected" : ""} onClick={() => onChange({ ...aids, segmentation: "syllables" })}><strong>Syllabes</strong><small>ca · mion</small></button>
+      <button type="button" aria-pressed={aids.segmentation === "graphemes"} className={aids.segmentation === "graphemes" ? "selected" : ""} onClick={() => onChange({ ...aids, segmentation: "graphemes", complexSounds: true, silentLetters: true })}><strong>Graphèmes</strong><small>c · a · m · i · on</small></button>
+      <button type="button" aria-pressed={aids.segmentation === "guided"} className={aids.segmentation === "guided" ? "selected" : ""} onClick={() => onChange({ ...aids, segmentation: "guided", complexSounds: true, silentLetters: true })}><strong>Unités de lecture</strong><small>ca · mi · on</small></button>
+    </div>
     <label className="switch-row"><span><b>Colorer les sons complexes</b><small>ou, ai, eu, eau, ch…</small></span><input type="checkbox" checked={aids.complexSounds} onChange={(event) => onChange({ ...aids, complexSounds: event.target.checked })} /></label>
+    <label className="switch-row"><span><b>Griser les lettres muettes</b><small>Comme le p de loup.</small></span><input type="checkbox" checked={aids.silentLetters} onChange={(event) => onChange({ ...aids, silentLetters: event.target.checked })} /></label>
     <label className="font-row"><span><b>Police de lecture</b><small>Choisir la forme la plus familière.</small></span><select value={aids.font} onChange={(event) => onChange({ ...aids, font: event.target.value as ReadingAids["font"] })}><option value="nunito">Nunito</option><option value="outfit">Outfit</option><option value="quicksand">Quicksand</option><option value="marelle-baton">Marelle Bâton · officielle</option><option value="marelle">Marelle cursive · officielle</option></select></label>
   </div>;
 }
@@ -29,12 +35,14 @@ function PunctualSetupForm({ aids, onAidsChange, onBack, onStart }: { aids: Read
   </section>;
 }
 
-export function DailyOverview({ profile, steps, onBack, onStart }: { profile: Profile; steps: DailyJourneyStep[]; onBack(): void; onStart(): void }) {
+export function DailyOverview({ profile, steps, aids, onAidsChange, onBack, onStart }: { profile: Profile; steps: DailyJourneyStep[]; aids: ReadingAids; onAidsChange(aids: ReadingAids): void; onBack(): void; onStart(): void }) {
   const enabledRewards = profile.rewards.filter((reward) => reward.enabled).length;
+  const hasReadingStep = steps.some((step) => step.activity === "reading" || step.activity === "decoding");
   return <section className="page daily-overview"><BackButton onClick={onBack} />
     <div className="daily-hero"><div><span className="eyebrow">Travail quotidien</span><h1>La grande promenade</h1><p>{steps.length} petites étapes, une progression visible et un cadeau à ouvrir au bout du chemin.</p></div><DevoirosAvatar id={profile.devoiros} className="hero-devoiros" /></div>
     <div className="journey-preview"><div className="journey-line" />{steps.map((step, index) => <div className="journey-stop" key={step.title}><span>{index + 1}</span><strong>{step.title}</strong><small>{step.instruction}</small></div>)}<div className="journey-stop gift"><span className="gift-mark" aria-hidden="true" /><strong>Cadeau</strong><small>Une surprise aléatoire</small></div></div>
     <div className="daily-note"><span className="gift-mark" aria-hidden="true" /><p><strong>{enabledRewards} récompenses sont prêtes.</strong><br />Le cadeau sera choisi selon leur rareté après toutes les étapes.</p></div>
+    {hasReadingStep && <div className="daily-aids-card"><div><span className="eyebrow">À préparer avant de commencer</span><h2>Besoin d’un petit coup de pouce ?</h2><p>Ces réglages restent accessibles pendant chaque exercice de lecture.</p></div><AidControls aids={aids} onChange={onAidsChange} /></div>}
     <button className="primary-button daily-start" onClick={onStart}>Commencer le parcours →</button>
   </section>;
 }

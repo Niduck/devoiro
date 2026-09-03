@@ -48,7 +48,7 @@ Le parent choisit :
 
 - une partie chronométrée d'une minute ou une partie sans chronomètre ;
 - le niveau de lecture, avec un exemple du contenu proposé ;
-- la séparation syllabique et/ou la coloration des sons complexes.
+- le niveau de découpage, la coloration des sons complexes et le repérage des lettres muettes.
 
 ### Travail quotidien
 
@@ -79,13 +79,14 @@ console. Le cadeau n'est ouvert qu'à la fin du travail quotidien.
 
 ## Aides à la lecture
 
-- La séparation syllabique affiche le mot découpé, puis le mot original juste
-  en dessous : `lu·mi·neux` puis `lumineux`.
-- Le découpage est basé en priorité sur des données pédagogiques explicites ;
-  l'algorithme n'est qu'une solution de secours.
-- L'aide syllabique se désactive automatiquement pour les phrases.
+- Quatre affichages sont proposés : mot entier, syllabes (`ca·mion`), graphèmes (`c·a·m·i·on`) et unités de lecture (`ca·mi·on`).
+- Le mot entier reste affiché sous les trois vues découpées.
+- Le découpage syllabique est basé en priorité sur des données pédagogiques explicites. Le mode graphèmes conserve chaque correspondance comme `ch`, `ou` ou `on`. Les unités de lecture respectent les syllabes puis regroupent les éléments faciles à fusionner : `camion` donne `ca·mi·on` et `canard` donne `ca·na·r` avec le `d` muet grisé.
+- Les lettres muettes connues peuvent être grisées, indépendamment du découpage.
+- Le découpage se désactive automatiquement pour les phrases.
 - Seules les associations de lettres (`ou`, `an`, `en`, `ai`, `au`, `oi`, etc.) peuvent être colorées ; les consonnes comme `ch`, `ph`, `gn` ou `qu` restent neutres.
-- Les aides restent activables et désactivables pendant une séance.
+- Les aides restent activables avant et pendant une séance. En GS, les aides recommandées sont préactivées lorsque le parent n’a encore fait aucun choix.
+- Après un échec, le bouton de nouvelle tentative active automatiquement une configuration adaptée à la classe et à la période.
 - La police de lecture est configurable : Nunito, Outfit, Quicksand, Marelle Bâton ou Marelle cursive. Les deux variantes Marelle sont les webfonts officielles du ministère, intégrées localement sous licence OFL.
 - Dans une phrase, les mots déjà reconnus sont surlignés de manière cumulative et ne redeviennent jamais non lus pendant la reconnaissance.
 

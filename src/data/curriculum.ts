@@ -1,6 +1,44 @@
-import type { ActivityLevel, DailyJourneyStep, Profile, ReadingItem, ReadingLevel } from "../types";
+import type { ActivityLevel, DailyJourneyStep, Profile, ReadingAnnotatedUnit, ReadingItem, ReadingLevel } from "../types";
 
-const word = (text: string, syllables: string): ReadingItem => ({ text, syllables: syllables.split("-"), kind: "word" });
+type ReadingAnnotation = {
+  graphemes: ReadingAnnotatedUnit[];
+  guidedUnits: ReadingAnnotatedUnit[];
+};
+
+/**
+ * Les mots sensibles sont décrits explicitement. Le moteur phonologique reste un secours
+ * pour le reste du corpus, mais ne peut pas prendre le pas sur une annotation relue.
+ */
+const READING_ANNOTATIONS: Record<string, ReadingAnnotation> = {
+  chat: {
+    graphemes: [{ text: "ch" }, { text: "a" }, { text: "t", silent: true }],
+    guidedUnits: [{ text: "ch" }, { text: "a" }, { text: "t", silent: true }],
+  },
+  camion: {
+    graphemes: [{ text: "c" }, { text: "a" }, { text: "m" }, { text: "i" }, { text: "on", complex: true }],
+    guidedUnits: [{ text: "ca" }, { text: "mi" }, { text: "on", complex: true }],
+  },
+  canard: {
+    graphemes: [{ text: "c" }, { text: "a" }, { text: "n" }, { text: "a" }, { text: "r" }, { text: "d", silent: true }],
+    guidedUnits: [{ text: "ca" }, { text: "na" }, { text: "r" }, { text: "d", silent: true }],
+  },
+  mouton: {
+    graphemes: [{ text: "m" }, { text: "ou", complex: true }, { text: "t" }, { text: "on", complex: true }],
+    guidedUnits: [{ text: "m" }, { text: "ou", complex: true }, { text: "t" }, { text: "on", complex: true }],
+  },
+  loup: {
+    graphemes: [{ text: "l" }, { text: "ou", complex: true }, { text: "p", silent: true }],
+    guidedUnits: [{ text: "l" }, { text: "ou", complex: true }, { text: "p", silent: true }],
+  },
+};
+
+const word = (text: string, syllables: string, silentEnding?: string): ReadingItem => ({
+  text,
+  syllables: syllables.split("-"),
+  silentEnding,
+  kind: "word",
+  ...READING_ANNOTATIONS[text],
+});
 const phrase = (text: string): ReadingItem => ({ text, kind: "phrase" });
 
 export const READING_LEVELS: Array<{ id: ReadingLevel; title: string; detail: string; example: string; icon: string }> = [
@@ -11,41 +49,41 @@ export const READING_LEVELS: Array<{ id: ReadingLevel; title: string; detail: st
 
 export const CONTENT: Record<ReadingLevel, ReadingItem[]> = {
   facile: [
-    word("chat", "chat"), word("chien", "chien"), word("lion", "lion"), word("tigre", "ti-gre"), word("lapin", "la-pin"),
-    word("souris", "sou-ris"), word("cheval", "che-val"), word("vache", "va-che"), word("mouton", "mou-ton"), word("chèvre", "chè-vre"),
-    word("cochon", "co-chon"), word("poule", "poule"), word("canard", "ca-nard"), word("oie", "oie"), word("dinde", "din-de"),
+    word("chat", "chat", "t"), word("chien", "chien"), word("lion", "lion"), word("tigre", "ti-gre"), word("lapin", "la-pin"),
+    word("souris", "sou-ris", "s"), word("cheval", "che-val"), word("vache", "va-che"), word("mouton", "mou-ton"), word("chèvre", "chè-vre"),
+    word("cochon", "co-chon"), word("poule", "poule"), word("canard", "ca-nard", "d"), word("oie", "oie"), word("dinde", "din-de"),
     word("âne", "âne"), word("zèbre", "zè-bre"), word("girafe", "gi-ra-fe"), word("singe", "sin-ge"), word("panda", "pan-da"),
-    word("koala", "ko-a-la"), word("ours", "ours"), word("loup", "loup"), word("renard", "re-nard"), word("cerf", "cerf"),
+    word("koala", "ko-a-la"), word("ours", "ours"), word("loup", "loup", "p"), word("renard", "re-nard", "d"), word("cerf", "cerf"),
     word("biche", "bi-che"), word("hérisson", "hé-ris-son"), word("écureuil", "é-cu-reuil"), word("castor", "cas-tor"), word("loutre", "lou-tre"),
     word("phoque", "pho-que"), word("dauphin", "dau-phin"), word("baleine", "ba-lei-ne"), word("requin", "re-quin"), word("pieuvre", "pieu-vre"),
-    word("crabe", "cra-be"), word("tortue", "tor-tue"), word("grenouille", "gre-nou-ille"), word("lézard", "lé-zard"), word("serpent", "ser-pent"),
-    word("aigle", "ai-gle"), word("hibou", "hi-bou"), word("pigeon", "pi-geon"), word("perroquet", "per-ro-quet"), word("flamant", "fla-mant"),
-    word("papillon", "pa-pi-llon"), word("abeille", "a-beille"), word("fourmi", "four-mi"), word("coccinelle", "coc-ci-nelle"), word("escargot", "es-car-got"),
+    word("crabe", "cra-be"), word("tortue", "tor-tue"), word("grenouille", "gre-nou-ille"), word("lézard", "lé-zard", "d"), word("serpent", "ser-pent", "t"),
+    word("aigle", "ai-gle"), word("hibou", "hi-bou"), word("pigeon", "pi-geon"), word("perroquet", "per-ro-quet", "t"), word("flamant", "fla-mant", "t"),
+    word("papillon", "pa-pi-llon"), word("abeille", "a-beille"), word("fourmi", "four-mi"), word("coccinelle", "coc-ci-nelle"), word("escargot", "es-car-got", "t"),
     word("pomme", "pom-me"), word("poire", "poi-re"), word("banane", "ba-na-ne"), word("fraise", "frai-se"), word("cerise", "ce-ri-se"),
     word("melon", "me-lon"), word("citron", "ci-tron"), word("orange", "o-ran-ge"), word("tomate", "to-ma-te"), word("salade", "sa-la-de"),
     word("table", "ta-ble"), word("chaise", "chai-se"), word("porte", "por-te"), word("fenêtre", "fe-nê-tre"), word("lampe", "lam-pe"),
     word("livre", "li-vre"), word("cahier", "ca-hier"), word("crayon", "cra-yon"), word("gomme", "gom-me"), word("règle", "rè-gle"),
     word("trousse", "trous-se"), word("cartable", "car-ta-ble"), word("école", "é-co-le"), word("ballon", "bal-lon"), word("poupée", "pou-pée"),
-    word("robot", "ro-bot"), word("voiture", "voi-tu-re"), word("camion", "ca-mion"), word("vélo", "vé-lo"), word("train", "train"),
+    word("robot", "ro-bot", "t"), word("voiture", "voi-tu-re"), word("camion", "ca-mion"), word("vélo", "vé-lo"), word("train", "train"),
     word("bateau", "ba-teau"), word("avion", "a-vion"), word("fusée", "fu-sée"), word("maison", "mai-son"), word("jardin", "jar-din"),
     word("arbre", "ar-bre"), word("fleur", "fleur"), word("feuille", "feuille"), word("rivière", "ri-viè-re"), word("nuage", "nua-ge"),
-    word("pluie", "pluie"), word("neige", "nei-ge"), word("vent", "vent"), word("matin", "ma-tin"), word("soir", "soir"),
+    word("pluie", "pluie"), word("neige", "nei-ge"), word("vent", "vent", "t"), word("matin", "ma-tin"), word("soir", "soir"),
     word("maman", "ma-man"), word("papa", "pa-pa"), word("bébé", "bé-bé"), word("ami", "a-mi"), word("frère", "frè-re"), word("sœur", "sœur"),
   ],
   moyen: [
-    word("aventure", "a-ven-tu-re"), word("bibliothèque", "bi-blio-thè-que"), word("chocolat", "cho-co-lat"), word("dinosaure", "di-no-sau-re"),
+    word("aventure", "a-ven-tu-re"), word("bibliothèque", "bi-blio-thè-que"), word("chocolat", "cho-co-lat", "t"), word("dinosaure", "di-no-sau-re"),
     word("équilibre", "é-qui-li-bre"), word("formidable", "for-mi-da-ble"), word("imagination", "i-ma-gi-na-tion"), word("labyrinthe", "la-by-rin-the"),
     word("montgolfière", "mont-gol-fiè-re"), word("nénuphar", "né-nu-phar"), word("orchestre", "or-ches-tre"), word("parapluie", "pa-ra-pluie"),
-    word("silencieux", "si-len-cieux"), word("trampoline", "tram-po-li-ne"), word("xylophone", "xy-lo-pho-ne"), word("bricolage", "bri-co-la-ge"),
-    word("calendrier", "ca-len-drier"), word("délicieux", "dé-li-cieux"), word("fantastique", "fan-tas-ti-que"), word("hélicoptère", "hé-li-cop-tè-re"),
-    word("lumineux", "lu-mi-neux"), word("mystérieux", "mys-té-rieux"), word("ordinateur", "or-di-na-teur"), word("restaurant", "res-tau-rant"),
+    word("silencieux", "si-len-cieux", "x"), word("trampoline", "tram-po-li-ne"), word("xylophone", "xy-lo-pho-ne"), word("bricolage", "bri-co-la-ge"),
+    word("calendrier", "ca-len-drier"), word("délicieux", "dé-li-cieux", "x"), word("fantastique", "fan-tas-ti-que"), word("hélicoptère", "hé-li-cop-tè-re"),
+    word("lumineux", "lu-mi-neux", "x"), word("mystérieux", "mys-té-rieux", "x"), word("ordinateur", "or-di-na-teur"), word("restaurant", "res-tau-rant", "t"),
     word("tournesol", "tour-ne-sol"),
     word("aquarium", "a-qua-rium"), word("balançoire", "ba-lan-çoi-re"), word("casserole", "cas-se-ro-le"), word("cheminée", "che-mi-née"),
     word("couverture", "cou-ver-tu-re"), word("crocodile", "cro-co-di-le"), word("décoration", "dé-co-ra-tion"), word("électricité", "é-lec-tri-ci-té"),
     word("enveloppe", "en-ve-lop-pe"), word("épouvantail", "é-pou-van-tail"), word("escabeau", "es-ca-beau"), word("éventail", "é-ven-tail"),
     word("explorateur", "ex-plo-ra-teur"), word("félicitation", "fé-li-ci-ta-tion"), word("funambule", "fu-nam-bu-le"), word("gourmandise", "gour-man-di-se"),
-    word("hippocampe", "hip-po-cam-pe"), word("instrument", "ins-tru-ment"), word("jongleur", "jon-gleur"), word("locomotive", "lo-co-mo-ti-ve"),
-    word("magicien", "ma-gi-cien"), word("marionnette", "ma-ri-on-net-te"), word("médicament", "mé-di-ca-ment"), word("météorite", "mé-té-o-ri-te"),
+    word("hippocampe", "hip-po-cam-pe"), word("instrument", "ins-tru-ment", "t"), word("jongleur", "jon-gleur"), word("locomotive", "lo-co-mo-ti-ve"),
+    word("magicien", "ma-gi-cien"), word("marionnette", "ma-ri-on-net-te"), word("médicament", "mé-di-ca-ment", "t"), word("météorite", "mé-té-o-ri-te"),
     word("moustiquaire", "mous-ti-quai-re"), word("navigateur", "na-vi-ga-teur"), word("observatoire", "ob-ser-va-toi-re"), word("pâtisserie", "pâ-tis-se-rie"),
     word("personnage", "per-son-na-ge"), word("photographie", "pho-to-gra-phie"), word("planète", "pla-nè-te"), word("poussette", "pous-set-te"),
     word("pyramide", "py-ra-mi-de"), word("radiateur", "ra-dia-teur"), word("récréation", "ré-cré-a-tion"), word("rhinocéros", "rhi-no-cé-ros"),

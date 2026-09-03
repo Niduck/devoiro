@@ -1,4 +1,4 @@
-# Référentiel pédagogique de Devoiro — PS à CM2
+# Référentiel pédagogique de Devoiro — programmes par niveau, de la PS au CM2
 
 Dernière vérification : 30 août 2026.
 
